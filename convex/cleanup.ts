@@ -30,6 +30,27 @@ export const clearAllTestData = internalMutation({
   },
 });
 
+// Clear cosmic profile + readings so they regenerate with corrected calculations
+export const resetMyCosmicProfile = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    let count = 0;
+    const profiles = await ctx.db.query("cosmicProfiles").withIndex("by_userId", (q: any) => q.eq("userId", userId)).collect();
+    for (const p of profiles) { await ctx.db.delete(p._id); count++; }
+    const readings = await ctx.db.query("readings").withIndex("by_userId", (q: any) => q.eq("userId", userId)).collect();
+    for (const r of readings) { await ctx.db.delete(r._id); count++; }
+    const conversations = await ctx.db.query("conversations").withIndex("by_userId", (q: any) => q.eq("userId", userId)).collect();
+    for (const c of conversations) {
+      const messages = await ctx.db.query("messages").withIndex("by_conversationId", (q: any) => q.eq("conversationId", c._id)).collect();
+      for (const m of messages) { await ctx.db.delete(m._id); count++; }
+      await ctx.db.delete(c._id); count++;
+    }
+    return { deleted: count };
+  },
+});
+
 async function clearUserData(ctx: any, userId: any) {
   let count = 0;
   const readings = await ctx.db.query("readings").withIndex("by_userId", (q: any) => q.eq("userId", userId)).collect();
