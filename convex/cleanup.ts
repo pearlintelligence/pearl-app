@@ -2,7 +2,7 @@
  * Cleanup utilities for testing. Removes stale data.
  */
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { mutation } from "./_generated/server";
+import { internalMutation, mutation } from "./_generated/server";
 
 // Authenticated cleanup for the current user
 export const clearMyReadings = mutation({
@@ -14,8 +14,8 @@ export const clearMyReadings = mutation({
   },
 });
 
-// Cleanup — temporarily public for data reset
-export const clearAllTestData = mutation({
+// Internal cleanup — callable from CLI
+export const clearAllTestData = internalMutation({
   args: {},
   handler: async (ctx) => {
     let count = 0;
