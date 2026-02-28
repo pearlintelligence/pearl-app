@@ -44,8 +44,9 @@ function computeCosmicProfile(birthDate: string, birthTime: string | undefined, 
   const sunBounds = [[20,19],[19,18],[21,20],[20,20],[21,21],[22,22],[23,22],[23,21],[23,22],[23,21],[22,21],[22,19]];
   let sunIdx = (month - 1);
   if (day < sunBounds[month - 1][0]) sunIdx = (month - 2 + 12) % 12;
-  // Aries starts at index 0 for month 3 (March 21+)
-  const signOrder = [9,10,11,0,1,2,3,4,5,6,7,8]; // Jan=Cap, Feb=Aqu...
+  // Maps month index to the zodiac sign that STARTS in that month
+  // Jan→Aquarius(10), Feb→Pisces(11), Mar→Aries(0), Apr→Taurus(1), …
+  const signOrder = [10,11,0,1,2,3,4,5,6,7,8,9];
   const sunSign = SIGNS[signOrder[sunIdx]];
   const sunElement = ELEMENTS[sunSign];
 
