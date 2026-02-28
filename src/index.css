@@ -1,0 +1,290 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-heading: "Cormorant Garamond", serif;
+  --font-body: "DM Sans", sans-serif;
+  --font-oracle: "Cormorant Garamond", serif;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --color-pearl-gold: #C9A96E;
+  --color-pearl-gold-light: #E8D5A3;
+  --color-pearl-gold-dim: #8B7340;
+  --color-pearl-warm: #E8E0D4;
+  --color-pearl-void: #0A0A0F;
+  --color-pearl-deep: #12121A;
+  --color-pearl-surface: #1A1A2E;
+  --color-pearl-muted: #8B8291;
+  --color-pearl-glow: rgba(201, 169, 110, 0.15);
+  --color-pearl-glow-strong: rgba(201, 169, 110, 0.3);
+}
+
+/* Pearl is always dark — sacred void aesthetic */
+:root {
+  --sidebar-width: 16rem;
+  --sidebar-width-icon: 3rem;
+
+  --primary: #C9A96E;
+  --primary-foreground: #0A0A0F;
+  --sidebar-primary: #C9A96E;
+  --sidebar-primary-foreground: #0A0A0F;
+
+  --success: #6EAA8D;
+  --success-foreground: #0A0A0F;
+  --warning: #D4A74E;
+  --warning-foreground: #0A0A0F;
+  --info: #7B9EC9;
+  --info-foreground: #0A0A0F;
+
+  --chart-1: #C9A96E;
+  --chart-2: #7B9EC9;
+  --chart-3: #9B7EC9;
+  --chart-4: #6EAA8D;
+  --chart-5: #C97B8B;
+
+  --radius: 0.75rem;
+  --background: #0A0A0F;
+  --foreground: #E8E0D4;
+  --card: #12121A;
+  --card-foreground: #E8E0D4;
+  --popover: #12121A;
+  --popover-foreground: #E8E0D4;
+  --secondary: #1A1A2E;
+  --secondary-foreground: #E8E0D4;
+  --muted: #1A1A2E;
+  --muted-foreground: #8B8291;
+  --accent: #1A1A2E;
+  --accent-foreground: #E8E0D4;
+  --destructive: #9B4D4D;
+  --destructive-foreground: #E8E0D4;
+  --border: rgba(201, 169, 110, 0.12);
+  --input: rgba(201, 169, 110, 0.12);
+  --ring: #C9A96E;
+  --sidebar: #0E0E15;
+  --sidebar-foreground: #E8E0D4;
+  --sidebar-accent: #1A1A2E;
+  --sidebar-accent-foreground: #E8E0D4;
+  --sidebar-border: rgba(201, 169, 110, 0.1);
+  --sidebar-ring: #C9A96E;
+}
+
+/* Force dark always */
+.dark {
+  --primary: #C9A96E;
+  --primary-foreground: #0A0A0F;
+  --sidebar-primary: #C9A96E;
+  --sidebar-primary-foreground: #0A0A0F;
+
+  --success: #6EAA8D;
+  --success-foreground: #0A0A0F;
+  --warning: #D4A74E;
+  --warning-foreground: #0A0A0F;
+  --info: #7B9EC9;
+  --info-foreground: #0A0A0F;
+
+  --chart-1: #C9A96E;
+  --chart-2: #7B9EC9;
+  --chart-3: #9B7EC9;
+  --chart-4: #6EAA8D;
+  --chart-5: #C97B8B;
+
+  --background: #0A0A0F;
+  --foreground: #E8E0D4;
+  --card: #12121A;
+  --card-foreground: #E8E0D4;
+  --popover: #12121A;
+  --popover-foreground: #E8E0D4;
+  --secondary: #1A1A2E;
+  --secondary-foreground: #E8E0D4;
+  --muted: #1A1A2E;
+  --muted-foreground: #8B8291;
+  --accent: #1A1A2E;
+  --accent-foreground: #E8E0D4;
+  --destructive: #9B4D4D;
+  --destructive-foreground: #E8E0D4;
+  --border: rgba(201, 169, 110, 0.12);
+  --input: rgba(201, 169, 110, 0.12);
+  --ring: #C9A96E;
+  --sidebar: #0E0E15;
+  --sidebar-foreground: #E8E0D4;
+  --sidebar-accent: #1A1A2E;
+  --sidebar-accent-foreground: #E8E0D4;
+  --sidebar-border: rgba(201, 169, 110, 0.1);
+  --sidebar-ring: #C9A96E;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: "DM Sans", sans-serif;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "Cormorant Garamond", serif;
+  }
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [type="button"]:not(:disabled),
+  [type="submit"]:not(:disabled),
+  [type="reset"]:not(:disabled),
+  a[href],
+  select:not(:disabled),
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled) {
+    @apply cursor-pointer;
+  }
+}
+
+@layer components {
+  .container {
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .flex {
+    min-height: 0;
+    min-width: 0;
+  }
+
+  @media (min-width: 640px) {
+    .container {
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .container {
+      padding-left: 2rem;
+      padding-right: 2rem;
+      max-width: 1280px;
+    }
+  }
+
+  /* Oracle voice text — Cormorant Garamond italic */
+  .oracle-voice {
+    font-family: "Cormorant Garamond", serif;
+    font-style: italic;
+    font-weight: 400;
+    line-height: 1.7;
+    letter-spacing: 0.01em;
+  }
+
+  /* Sacred glow effect */
+  .pearl-glow {
+    box-shadow: 0 0 30px rgba(201, 169, 110, 0.08), 0 0 60px rgba(201, 169, 110, 0.04);
+  }
+
+  .pearl-glow-strong {
+    box-shadow: 0 0 20px rgba(201, 169, 110, 0.15), 0 0 40px rgba(201, 169, 110, 0.08), 0 0 80px rgba(201, 169, 110, 0.04);
+  }
+
+  /* Gradient text with gold */
+  .text-pearl-gradient {
+    background: linear-gradient(135deg, #C9A96E, #E8D5A3, #C9A96E);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Sacred border glow */
+  .sacred-border {
+    border: 1px solid rgba(201, 169, 110, 0.15);
+    background: linear-gradient(180deg, rgba(201, 169, 110, 0.03) 0%, transparent 100%);
+  }
+
+  /* Breathing animation for sacred elements */
+  @keyframes sacred-breathe {
+    0%, 100% { opacity: 0.4; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.02); }
+  }
+
+  .sacred-breathe {
+    animation: sacred-breathe 4s ease-in-out infinite;
+  }
+
+  /* Gentle float animation */
+  @keyframes gentle-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+
+  .gentle-float {
+    animation: gentle-float 6s ease-in-out infinite;
+  }
+
+  /* Shimmer effect for loading states */
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  .shimmer {
+    background: linear-gradient(90deg, transparent 0%, rgba(201, 169, 110, 0.08) 50%, transparent 100%);
+    background-size: 200% 100%;
+    animation: shimmer 2s ease-in-out infinite;
+  }
+
+  /* Star field background */
+  .star-field {
+    background-image: radial-gradient(1px 1px at 10% 20%, rgba(201, 169, 110, 0.3), transparent),
+      radial-gradient(1px 1px at 30% 60%, rgba(201, 169, 110, 0.2), transparent),
+      radial-gradient(1px 1px at 50% 10%, rgba(201, 169, 110, 0.25), transparent),
+      radial-gradient(1px 1px at 70% 40%, rgba(201, 169, 110, 0.15), transparent),
+      radial-gradient(1px 1px at 90% 80%, rgba(201, 169, 110, 0.2), transparent),
+      radial-gradient(1px 1px at 20% 90%, rgba(201, 169, 110, 0.18), transparent),
+      radial-gradient(1px 1px at 60% 70%, rgba(201, 169, 110, 0.22), transparent),
+      radial-gradient(1px 1px at 80% 15%, rgba(201, 169, 110, 0.16), transparent),
+      radial-gradient(1.5px 1.5px at 15% 45%, rgba(232, 213, 163, 0.35), transparent),
+      radial-gradient(1.5px 1.5px at 85% 55%, rgba(232, 213, 163, 0.3), transparent);
+  }
+}
