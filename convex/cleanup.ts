@@ -14,8 +14,8 @@ export const clearMyReadings = mutation({
   },
 });
 
-// Internal cleanup — callable from CLI: `bunx convex run cleanup:clearAllTestData`
-export const clearAllTestData = internalMutation({
+// Cleanup — temporarily public for data reset
+export const clearAllTestData = mutation({
   args: {},
   handler: async (ctx) => {
     let count = 0;
