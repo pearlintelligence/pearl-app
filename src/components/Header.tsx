@@ -23,7 +23,7 @@ export function Header() {
               <div className="absolute inset-[30%] rounded-full bg-gradient-to-br from-pearl-gold-light to-pearl-gold" />
             </div>
             <span className="font-heading text-xl font-medium text-pearl-warm tracking-wide hidden sm:inline">
-              Pearl
+              Inner Pearl
             </span>
           </Link>
 
@@ -35,7 +35,7 @@ export function Header() {
                 asChild
               >
                 <Link to="/dashboard">
-                  Open Pearl
+                  Open Inner Pearl
                   <ArrowRight className="size-3.5 ml-1" />
                 </Link>
               </Button>

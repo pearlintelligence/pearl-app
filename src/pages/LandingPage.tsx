@@ -51,7 +51,7 @@ export function LandingPage() {
           </h1>
 
           <p className="text-base md:text-lg text-pearl-muted max-w-lg mx-auto leading-relaxed font-body">
-            Pearl synthesizes astrology, Human Design, Gene Keys, Kabbalah, and
+            Inner Pearl synthesizes astrology, Human Design, Gene Keys, Kabbalah, and
             Numerology into one unified map of your soul. Not a horoscope.{" "}
             <span className="text-pearl-warm">A revelation.</span>
           </p>
@@ -88,7 +88,7 @@ export function LandingPage() {
                 asChild
               >
                 <Link to="/dashboard">
-                  Enter Pearl
+                  Enter Inner Pearl
                   <ArrowRight className="size-4 ml-1" />
                 </Link>
               </Button>
@@ -108,7 +108,7 @@ export function LandingPage() {
               Your Cosmic Fingerprint
             </h2>
             <p className="text-pearl-muted max-w-xl mx-auto text-base font-body leading-relaxed">
-              No two souls carry the same design. Pearl weaves five wisdom
+              No two souls carry the same design. Inner Pearl weaves five wisdom
               traditions into a unified map that reveals why you are exactly who
               you are.
             </p>

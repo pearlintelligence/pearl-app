@@ -161,7 +161,7 @@ function SidebarHeaderContent() {
           <div className="absolute inset-[30%] rounded-full bg-gradient-to-br from-pearl-gold-light to-pearl-gold" />
         </div>
         <span className="font-heading text-lg font-medium text-pearl-warm tracking-wide">
-          Pearl
+          Inner Pearl
         </span>
       </Link>
     </SidebarHeader>

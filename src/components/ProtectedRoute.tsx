@@ -10,7 +10,7 @@ function PearlLoadingSkeleton() {
           <div className="absolute inset-0 rounded-full bg-pearl-gold/10 blur-xl sacred-breathe" />
           <div className="absolute inset-[25%] rounded-full bg-pearl-gold/20 animate-pulse" />
         </div>
-        <p className="text-pearl-muted font-body text-sm">Loading Pearl...</p>
+        <p className="text-pearl-muted font-body text-sm">Loading Inner Pearl...</p>
       </div>
     </div>
   );
