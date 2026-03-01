@@ -196,8 +196,8 @@ export function PlatformToolsPage() {
                 <p className="text-xs text-pearl-muted font-body">Readings</p>
               </div>
               <div className="text-center p-3 rounded-lg bg-pearl-surface/30">
-                <p className="text-2xl font-heading text-pearl-warm">{stats.totalMessages}</p>
-                <p className="text-xs text-pearl-muted font-body">Messages</p>
+                <p className="text-2xl font-heading text-pearl-warm">{stats.totalConversations}</p>
+                <p className="text-xs text-pearl-muted font-body">Conversations</p>
               </div>
             </div>
           ) : (

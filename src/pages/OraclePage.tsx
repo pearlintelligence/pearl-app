@@ -146,7 +146,7 @@ export function OraclePage() {
         question,
       });
     } catch (e) {
-      console.error(e);
+      Sentry.captureException(e);
     }
 
     setLoading(false);

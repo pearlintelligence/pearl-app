@@ -1,15 +1,20 @@
 import { useQuery } from "convex/react";
 import {
-  Activity,
   Flag,
   MessageCircle,
   ScrollText,
   Sparkles,
   TrendingUp,
   Users,
+  Zap,
 } from "lucide-react";
 import { api } from "../../../convex/_generated/api";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card";
 
 function StatCard({
   title,
@@ -25,15 +30,21 @@ function StatCard({
   accent?: boolean;
 }) {
   return (
-    <Card className={`bg-pearl-deep border-pearl-gold/10 ${accent ? "ring-1 ring-pearl-gold/20" : ""}`}>
+    <Card
+      className={`bg-pearl-deep border-pearl-gold/10 ${accent ? "ring-1 ring-pearl-gold/20" : ""}`}
+    >
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-body text-pearl-muted font-normal">
           {title}
         </CardTitle>
-        <Icon className={`size-4 ${accent ? "text-pearl-gold" : "text-pearl-muted"}`} />
+        <Icon
+          className={`size-4 ${accent ? "text-pearl-gold" : "text-pearl-muted"}`}
+        />
       </CardHeader>
       <CardContent>
-        <div className={`text-2xl font-heading font-semibold ${accent ? "text-pearl-gold" : "text-pearl-warm"}`}>
+        <div
+          className={`text-2xl font-heading font-semibold ${accent ? "text-pearl-gold" : "text-pearl-warm"}`}
+        >
           {value}
         </div>
         {subtitle && (
@@ -50,7 +61,9 @@ export function AdminDashboardPage() {
   if (!stats) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-heading text-pearl-warm">Admin Dashboard</h1>
+        <h1 className="text-2xl font-heading text-pearl-warm">
+          Admin Dashboard
+        </h1>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 8 }).map((_, i) => (
             <Card key={i} className="bg-pearl-deep border-pearl-gold/10">
@@ -67,7 +80,9 @@ export function AdminDashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-heading text-pearl-warm">Admin Dashboard</h1>
+        <h1 className="text-2xl font-heading text-pearl-warm">
+          Admin Dashboard
+        </h1>
         <p className="text-pearl-muted font-body text-sm mt-1">
           Platform overview and key metrics
         </p>
@@ -104,7 +119,9 @@ export function AdminDashboardPage() {
 
       {/* Engagement */}
       <div>
-        <h2 className="text-lg font-heading text-pearl-warm mb-3">Engagement</h2>
+        <h2 className="text-lg font-heading text-pearl-warm mb-3">
+          Engagement
+        </h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <StatCard
             title="Total Readings"
@@ -119,34 +136,48 @@ export function AdminDashboardPage() {
             icon={MessageCircle}
           />
           <StatCard
-            title="Total Messages"
-            value={stats.totalMessages}
-            subtitle="Oracle chat messages"
-            icon={Activity}
+            title="Active Conversations"
+            value={stats.activeConversationsThisWeek}
+            subtitle="With messages this week"
+            icon={Zap}
           />
         </div>
       </div>
 
       {/* Last 24h */}
       <div>
-        <h2 className="text-lg font-heading text-pearl-warm mb-3">Last 24 Hours</h2>
+        <h2 className="text-lg font-heading text-pearl-warm mb-3">
+          Last 24 Hours
+        </h2>
         <div className="grid gap-4 sm:grid-cols-3">
           <Card className="bg-pearl-deep border-pearl-gold/10">
             <CardContent className="p-4 text-center">
-              <div className="text-3xl font-heading text-pearl-gold">{stats.last24h.newUsers}</div>
-              <p className="text-xs text-pearl-muted font-body mt-1">New signups</p>
+              <div className="text-3xl font-heading text-pearl-gold">
+                {stats.last24h.newUsers}
+              </div>
+              <p className="text-xs text-pearl-muted font-body mt-1">
+                New signups
+              </p>
             </CardContent>
           </Card>
           <Card className="bg-pearl-deep border-pearl-gold/10">
             <CardContent className="p-4 text-center">
-              <div className="text-3xl font-heading text-pearl-warm">{stats.last24h.readings}</div>
-              <p className="text-xs text-pearl-muted font-body mt-1">Readings generated</p>
+              <div className="text-3xl font-heading text-pearl-warm">
+                {stats.last24h.readings}
+              </div>
+              <p className="text-xs text-pearl-muted font-body mt-1">
+                Readings generated
+              </p>
             </CardContent>
           </Card>
           <Card className="bg-pearl-deep border-pearl-gold/10">
             <CardContent className="p-4 text-center">
-              <div className="text-3xl font-heading text-pearl-warm">{stats.last24h.conversations}</div>
-              <p className="text-xs text-pearl-muted font-body mt-1">Oracle conversations</p>
+              <div className="text-3xl font-heading text-pearl-warm">
+                {stats.last24h.conversations}
+              </div>
+              <p className="text-xs text-pearl-muted font-body mt-1">
+                Oracle conversations
+              </p>
             </CardContent>
           </Card>
         </div>

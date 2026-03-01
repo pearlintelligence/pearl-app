@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/react";
 import { useAction, useQuery } from "convex/react";
 import { Compass, Globe2, Moon, Sun, Orbit, RefreshCw } from "lucide-react";
 import { useState } from "react";
@@ -49,6 +50,24 @@ interface PlanetData {
   house: number;
 }
 
+interface ChartData {
+  houses: number[];
+  sun: PlanetData;
+  moon: PlanetData;
+  mercury: PlanetData;
+  venus: PlanetData;
+  mars: PlanetData;
+  jupiter: PlanetData;
+  saturn: PlanetData;
+  uranus: PlanetData;
+  neptune: PlanetData;
+  pluto: PlanetData;
+  northNode: PlanetData;
+  southNode: PlanetData;
+  ascendant: { sign: string; degreeInSign: number };
+  midheaven: { sign: string; degreeInSign: number };
+}
+
 function PlanetRow({ name, data }: { name: string; data: PlanetData }) {
   const symbol = PLANET_ICONS[name] || "•";
   const label = PLANET_LABELS[name] || name;
@@ -93,7 +112,7 @@ function signFromDeg(lon: number): string {
   return signs[Math.floor(normalized / 30)];
 }
 
-function HousesGrid({ chartData }: { chartData: any }) {
+function HousesGrid({ chartData }: { chartData: ChartData | null }) {
   if (!chartData?.houses) return null;
 
   // houses is number[] — index 0 unused, indices 1-12 are the 12 house cusps
@@ -166,7 +185,7 @@ export function BlueprintPage() {
             <Button
               onClick={async () => {
                 setGenerating(true);
-                try { await generateFingerprint(); } catch (e) { console.error(e); }
+                try { await generateFingerprint(); } catch (e) { Sentry.captureException(e); }
                 setGenerating(false);
               }}
               className="bg-pearl-gold/20 hover:bg-pearl-gold/30 text-pearl-gold border border-pearl-gold/30 font-body rounded-full px-6"
@@ -181,7 +200,7 @@ export function BlueprintPage() {
   }
 
   // Parse full chart JSON
-  let chartData: any = null;
+  let chartData: ChartData | null = null;
   try {
     chartData = JSON.parse(natalChart.fullChartJson);
   } catch {

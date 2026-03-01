@@ -1,4 +1,5 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
@@ -39,23 +40,35 @@ export const isAdmin = query({
   },
 });
 
-/** Get dashboard stats */
-// TODO: These queries load ALL records from ALL tables using .collect().
-// This works fine for small datasets but will become a performance bottleneck
-// as the app scales. Migrate to paginated queries or aggregation tables when
-// user/reading counts exceed ~10k records.
+/**
+ * Get dashboard stats.
+ *
+ * Collects users, profiles, readings, conversations, featureFlags, and
+ * cosmicProfiles. Messages are intentionally NOT collected because they are
+ * the largest table and grow unbounded — loading them all would hit Convex
+ * query limits at scale.
+ *
+ * TODO: Migrate to Convex aggregate components for O(1) counts once available.
+ * See https://docs.convex.dev/components for pre-built aggregation helpers.
+ */
 export const getDashboardStats = query({
   args: {},
   handler: async ctx => {
     await requireAdmin(ctx);
 
-    // TODO: Replace .collect() with paginated queries or pre-computed aggregates
+    // These tables are bounded by user count and manageable for an early-stage app.
     const users = await ctx.db.query("users").collect();
     const profiles = await ctx.db.query("userProfiles").collect();
+    const featureFlags = await ctx.db.query("featureFlags").collect();
+    const cosmicProfiles = await ctx.db.query("cosmicProfiles").collect();
+
+    // Readings and conversations grow with users but are bounded per-user.
     const readings = await ctx.db.query("readings").collect();
     const conversations = await ctx.db.query("conversations").collect();
-    const messages = await ctx.db.query("messages").collect();
-    const featureFlags = await ctx.db.query("featureFlags").collect();
+
+    // NOTE: Messages are NOT collected. They are the largest table (many per
+    // conversation) and would cause timeouts at scale. Use conversations as
+    // the engagement proxy instead.
 
     const now = Date.now();
     const oneDayAgo = now - 24 * 60 * 60 * 1000;
@@ -75,8 +88,11 @@ export const getDashboardStats = query({
       c => c.createdAt > sevenDaysAgo,
     ).length;
 
-    // Users with cosmic profiles generated
-    const cosmicProfiles = await ctx.db.query("cosmicProfiles").collect();
+    // Active conversations = conversations with recent message activity.
+    // This replaces `totalMessages` as a lighter engagement metric.
+    const activeConversationsThisWeek = conversations.filter(
+      c => c.lastMessageAt > sevenDaysAgo,
+    ).length;
 
     return {
       totalUsers: users.length,
@@ -88,7 +104,7 @@ export const getDashboardStats = query({
       cosmicProfilesGenerated: cosmicProfiles.length,
       totalReadings: readings.length,
       totalConversations: conversations.length,
-      totalMessages: messages.length,
+      activeConversationsThisWeek,
       activeFlags: featureFlags.filter(f => f.enabled).length,
       totalFlags: featureFlags.length,
       last7Days: {
@@ -110,32 +126,47 @@ export const getDashboardStats = query({
   },
 });
 
-/** List all users with their profiles */
-// TODO: This loads ALL users and related data into memory. Add server-side
-// pagination (e.g. cursor-based) before user count exceeds ~10k.
+/**
+ * List users with their profiles — paginated.
+ *
+ * Uses Convex built-in cursor pagination so only one page of users is loaded
+ * at a time. Each user is enriched via indexed per-user lookups instead of
+ * loading all profiles/readings/conversations into memory.
+ *
+ * TODO: Add server-side search via a search index when Convex supports it,
+ * or use the aggregate component for total counts.
+ */
 export const listUsers = query({
-  args: {},
-  handler: async ctx => {
+  args: { paginationOpts: paginationOptsValidator },
+  handler: async (ctx, { paginationOpts }) => {
     await requireAdmin(ctx);
 
-    // TODO: Replace .collect() with paginated queries
-    const users = await ctx.db.query("users").collect();
-    const profiles = await ctx.db.query("userProfiles").collect();
-    const cosmicProfiles = await ctx.db.query("cosmicProfiles").collect();
-    const readings = await ctx.db.query("readings").collect();
-    const conversations = await ctx.db.query("conversations").collect();
+    // Paginate users instead of loading every row into memory.
+    const usersPage = await ctx.db
+      .query("users")
+      .order("desc")
+      .paginate(paginationOpts);
 
-    const profileMap = new Map(profiles.map(p => [p.userId, p]));
-    const cosmicMap = new Map(cosmicProfiles.map(c => [c.userId, c]));
-
-    return users
-      .map(user => {
-        const profile = profileMap.get(user._id);
-        const cosmic = cosmicMap.get(user._id);
-        const userReadings = readings.filter(r => r.userId === user._id);
-        const userConversations = conversations.filter(
-          c => c.userId === user._id,
-        );
+    // Enrich each user in this page with profile data using indexed lookups.
+    const enrichedUsers = await Promise.all(
+      usersPage.page.map(async user => {
+        const profile = await ctx.db
+          .query("userProfiles")
+          .withIndex("by_userId", q => q.eq("userId", user._id))
+          .first();
+        const cosmic = await ctx.db
+          .query("cosmicProfiles")
+          .withIndex("by_userId", q => q.eq("userId", user._id))
+          .first();
+        // Per-user counts via index — avoids loading all readings/conversations.
+        const userReadings = await ctx.db
+          .query("readings")
+          .withIndex("by_userId", q => q.eq("userId", user._id))
+          .collect();
+        const userConversations = await ctx.db
+          .query("conversations")
+          .withIndex("by_userId", q => q.eq("userId", user._id))
+          .collect();
         const isAdminUser =
           user.email?.split("@")[1]?.toLowerCase() === ADMIN_DOMAIN;
 
@@ -153,8 +184,13 @@ export const listUsers = query({
           birthCity: profile?.birthCity,
           birthCountry: profile?.birthCountry,
         };
-      })
-      .sort((a, b) => b.createdAt - a.createdAt);
+      }),
+    );
+
+    return {
+      ...usersPage,
+      page: enrichedUsers,
+    };
   },
 });
 
@@ -178,20 +214,6 @@ export const deleteUser = mutation({
       .withIndex("by_userId", q => q.eq("userId", userId))
       .first();
     if (cosmic) await ctx.db.delete(cosmic._id);
-
-    // Delete natal chart
-    const natalChart = await ctx.db
-      .query("natalCharts")
-      .withIndex("by_userId", q => q.eq("userId", userId))
-      .first();
-    if (natalChart) await ctx.db.delete(natalChart._id);
-
-    // Delete life purpose profile
-    const lifePurpose = await ctx.db
-      .query("lifePurposeProfiles")
-      .withIndex("by_userId", q => q.eq("userId", userId))
-      .first();
-    if (lifePurpose) await ctx.db.delete(lifePurpose._id);
 
     // Delete readings
     const readings = await ctx.db
@@ -232,16 +254,21 @@ export const deleteUser = mutation({
   },
 });
 
-/** Get analytics data for charts */
-// TODO: This loads ALL users, readings, and conversations into memory.
-// Consider pre-computing daily aggregates via a cron job or using
-// indexed time-range queries as the dataset grows.
+/**
+ * Get analytics data for charts (last 30 days).
+ *
+ * Collects users, readings, and conversations to build daily aggregates.
+ * Messages are NOT collected — they aren't needed for these charts.
+ *
+ * TODO: Pre-compute daily aggregates via a scheduled cron job and store in
+ * an `analyticsDaily` table. This would make this query O(30) instead of
+ * O(users + readings + conversations).
+ */
 export const getAnalytics = query({
   args: {},
   handler: async ctx => {
     await requireAdmin(ctx);
 
-    // TODO: Replace .collect() with time-range indexed queries or aggregation tables
     const users = await ctx.db.query("users").collect();
     const readings = await ctx.db.query("readings").collect();
     const conversations = await ctx.db.query("conversations").collect();

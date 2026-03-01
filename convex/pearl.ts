@@ -1,35 +1,36 @@
 /**
  * Pearl AI — Core generation engine.
- *
+ * 
  * Architecture:
  *   Swiss Ephemeris (astronomy-engine) → Natal Chart → Life Purpose Engine → Pearl's Interpretation
- *
+ * 
  * Systems:
  *   1. Astrology (core) — real Swiss Ephemeris calculations via astronomy-engine
  *   2. Human Design — REAL astronomical calculations (88° solar arc, gate/line resolution)
  *   3. Kabbalah — Tree of Life numerological mapping
  *   4. Numerology — standard Western numerology
- *
+ * 
  * Gene Keys: REMOVED from v1 (proprietary). May return as premium add-on.
  */
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { v } from "convex/values";
-import { internal } from "./_generated/api";
 import { action, internalMutation } from "./_generated/server";
+import { internal } from "./_generated/api";
+import type { Doc } from "./_generated/dataModel";
 import {
-  birthToUTC,
-  calculateLifePath,
   calculateNatalChart,
-  calculateProgressedChart,
   calculateTransitChart,
-  ELEMENTS,
+  calculateProgressedChart,
+  calculateLifePath,
+  birthToUTC,
   geocodeCity,
   getTimezone,
   LIFE_PATH_MEANINGS,
+  ELEMENTS,
   type NatalChart,
 } from "./ephemeris";
-import { calculateHDChart, type HDChart } from "./humandesign";
 import { generateLifePurpose } from "./lifePurpose";
+import { calculateHDChart, type HDChart } from "./humandesign";
 
 // ────────────────────────────────────────────────────────────────
 // Unified Systems (real HD calculations + Kabbalah/Numerology)
@@ -106,40 +107,16 @@ async function computeSimplifiedSystems(
   const kbIdx = (day + month) % sephiroth.length;
   const kbSeph = sephiroth[kbIdx];
 
-  const kbPaths = [
-    "The Path of the Fool",
-    "The Path of the Magician",
-    "The Path of the High Priestess",
-    "The Path of the Empress",
-    "The Path of the Emperor",
-    "The Path of the Hierophant",
-    "The Path of the Lovers",
-    "The Path of the Chariot",
-    "The Path of Strength",
-    "The Path of the Hermit",
-  ];
+  const kbPaths = ["The Path of the Fool", "The Path of the Magician", "The Path of the High Priestess", "The Path of the Empress", "The Path of the Emperor", "The Path of the Hierophant", "The Path of the Lovers", "The Path of the Chariot", "The Path of Strength", "The Path of the Hermit"];
   const kbPath = kbPaths[(day * month) % kbPaths.length];
 
-  const soulUrges = [
-    "The Seeker",
-    "The Builder",
-    "The Communicator",
-    "The Nurturer",
-    "The Pioneer",
-    "The Healer",
-    "The Mystic",
-    "The Strategist",
-    "The Visionary",
-    "The Teacher",
-    "The Transformer",
-    "The Sage",
-  ];
+  const soulUrges = ["The Seeker", "The Builder", "The Communicator", "The Nurturer", "The Pioneer", "The Healer", "The Mystic", "The Strategist", "The Visionary", "The Teacher", "The Transformer", "The Sage"];
   const kbSoulUrge = soulUrges[(day + year) % soulUrges.length];
 
   // ─── Numerology ───
   const lifePathNumber = calculateLifePath(birthDate);
   const expressionNumber = ((day + month) % 9) + 1;
-  const soulNumber = ((month + (year % 100)) % 9) + 1;
+  const soulNumber = ((month + year % 100) % 9) + 1;
 
   return {
     hdType,
@@ -161,11 +138,7 @@ async function computeSimplifiedSystems(
 // Oracle Text Generation
 // ────────────────────────────────────────────────────────────────
 
-function generateFingerprintSummary(
-  name: string,
-  chart: NatalChart,
-  sys: SimplifiedSystems,
-): string {
+function generateFingerprintSummary(name: string, chart: NatalChart, sys: SimplifiedSystems): string {
   const sunEl = ELEMENTS[chart.sun.sign] ?? "Fire";
   const moonEl = ELEMENTS[chart.moon.sign] ?? "Water";
 
@@ -182,30 +155,24 @@ In the Tree of Life, your soul resonates with ${sys.kbSephirah}. You walk ${sys.
 With Life Path ${sys.lifePathNumber} — ${sys.lifePathMeaning} — all systems converge on a single truth: you are here not despite who you are, but because of it.`;
 }
 
-function generateLifePurposeText(
-  name: string,
-  chart: NatalChart,
-  sys: SimplifiedSystems,
-): string {
+function generateLifePurposeText(name: string, chart: NatalChart, sys: SimplifiedSystems): string {
   const sunEl = ELEMENTS[chart.sun.sign] ?? "Fire";
 
-  const hdPurpose =
-    sys.hdType === "Generator" || sys.hdType === "Manifesting Generator"
-      ? "You are a life force — a sacred engine of creation. When something truly lights you up, your entire being hums with an energy that can move mountains. Your purpose is not found through seeking — it finds you, through the things that make your body say yes."
-      : sys.hdType === "Projector"
-        ? "You are a guide — one who sees the architecture of energy in others with penetrating clarity. You were never meant to keep up with the pace of the world around you. Your purpose unfolds when you are deeply recognized for the wisdom you naturally carry."
-        : sys.hdType === "Manifestor"
-          ? "You are an initiator — a force of nature that was born to start things, to set new realities into motion. You do not wait for permission. Your purpose is to follow the creative impulses that arise from within and inform those around you as you act."
-          : "You are a mirror — a rare and sacred reflector of the health and vitality of your community. Your purpose unfolds slowly, over lunar cycles, as you sample the energy of the world around you and reflect back what is true.";
+  const hdPurpose = sys.hdType === "Generator" || sys.hdType === "Manifesting Generator"
+    ? "You are a life force — a sacred engine of creation. When something truly lights you up, your entire being hums with an energy that can move mountains. Your purpose is not found through seeking — it finds you, through the things that make your body say yes."
+    : sys.hdType === "Projector"
+    ? "You are a guide — one who sees the architecture of energy in others with penetrating clarity. You were never meant to keep up with the pace of the world around you. Your purpose unfolds when you are deeply recognized for the wisdom you naturally carry."
+    : sys.hdType === "Manifestor"
+    ? "You are an initiator — a force of nature that was born to start things, to set new realities into motion. You do not wait for permission. Your purpose is to follow the creative impulses that arise from within and inform those around you as you act."
+    : "You are a mirror — a rare and sacred reflector of the health and vitality of your community. Your purpose unfolds slowly, over lunar cycles, as you sample the energy of the world around you and reflect back what is true.";
 
-  const elementWisdom =
-    sunEl === "Fire"
-      ? "The fire in your chart does not burn to destroy — it burns to illuminate. You are here to bring light to places that have forgotten what light looks like."
-      : sunEl === "Earth"
-        ? "The earth in your design speaks of a soul that builds lasting things. You are here to give form to what exists only as potential — to make the invisible visible, the abstract real."
-        : sunEl === "Air"
-          ? "The air in your chart speaks of a mind that bridges worlds. You are here to translate — between people, between ideas, between what is known and what is waiting to be understood."
-          : "The water in your design runs deep — deeper than you sometimes realize. You are here to feel what others cannot, to hold space for the emotional truths that the world needs most.";
+  const elementWisdom = sunEl === "Fire"
+    ? "The fire in your chart does not burn to destroy — it burns to illuminate. You are here to bring light to places that have forgotten what light looks like."
+    : sunEl === "Earth"
+    ? "The earth in your design speaks of a soul that builds lasting things. You are here to give form to what exists only as potential — to make the invisible visible, the abstract real."
+    : sunEl === "Air"
+    ? "The air in your chart speaks of a mind that bridges worlds. You are here to translate — between people, between ideas, between what is known and what is waiting to be understood."
+    : "The water in your design runs deep — deeper than you sometimes realize. You are here to feel what others cannot, to hold space for the emotional truths that the world needs most.";
 
   return `${name}.
 
@@ -241,36 +208,29 @@ function generateDailyBriefText(
 
   const dayEnergies: Record<string, string> = {
     Sunday: "The Sun's day — a time of illumination and renewed purpose",
-    Monday:
-      "The Moon's day — emotions run closer to the surface, inviting inner listening",
+    Monday: "The Moon's day — emotions run closer to the surface, inviting inner listening",
     Tuesday: "Mars rules today — courage and decisive action are favored",
-    Wednesday:
-      "Mercury's day — communication, connection, and mental clarity are heightened",
-    Thursday:
-      "Jupiter expands today — growth, learning, and abundance flow more freely",
-    Friday:
-      "Venus graces today — beauty, relationships, and creative expression are amplified",
-    Saturday:
-      "Saturn's day — structure, reflection, and honest self-assessment serve you well",
+    Wednesday: "Mercury's day — communication, connection, and mental clarity are heightened",
+    Thursday: "Jupiter expands today — growth, learning, and abundance flow more freely",
+    Friday: "Venus graces today — beauty, relationships, and creative expression are amplified",
+    Saturday: "Saturn's day — structure, reflection, and honest self-assessment serve you well",
   };
 
-  const hdAdvice =
-    sys.hdType === "Generator" || sys.hdType === "Manifesting Generator"
-      ? "Pay attention to what lights up your sacral energy today. The universe will present something worth responding to — your body will know before your mind does."
-      : sys.hdType === "Projector"
-        ? "Conserve your energy today for what truly matters. An invitation or recognition may arrive — be ready to receive it fully rather than chasing what isn't meant for you."
-        : sys.hdType === "Manifestor"
-          ? "Notice what creative impulse is stirring within you today. Trust the urge to initiate, and remember to inform those around you as you move."
-          : "Take note of the collective energy around you today. Your gift is in reflecting truth — allow yourself the space to process before committing to anything.";
+  const hdAdvice = sys.hdType === "Generator" || sys.hdType === "Manifesting Generator"
+    ? "Pay attention to what lights up your sacral energy today. The universe will present something worth responding to — your body will know before your mind does."
+    : sys.hdType === "Projector"
+    ? "Conserve your energy today for what truly matters. An invitation or recognition may arrive — be ready to receive it fully rather than chasing what isn't meant for you."
+    : sys.hdType === "Manifestor"
+    ? "Notice what creative impulse is stirring within you today. Trust the urge to initiate, and remember to inform those around you as you move."
+    : "Take note of the collective energy around you today. Your gift is in reflecting truth — allow yourself the space to process before committing to anything.";
 
-  const elementForecast =
-    sunEl === "Fire"
-      ? "Your fire energy may feel particularly alive today. Channel it intentionally rather than letting it scatter."
-      : sunEl === "Earth"
-        ? "Ground yourself this morning. Your earth energy thrives when you tend to the practical before the aspirational."
-        : sunEl === "Air"
-          ? "Your mental energy is heightened today. A conversation or idea may arrive that shifts your perspective in an unexpected way."
-          : "Your emotional antenna is especially sensitive today. Honor what you feel — it carries information your mind hasn't processed yet.";
+  const elementForecast = sunEl === "Fire"
+    ? "Your fire energy may feel particularly alive today. Channel it intentionally rather than letting it scatter."
+    : sunEl === "Earth"
+    ? "Ground yourself this morning. Your earth energy thrives when you tend to the practical before the aspirational."
+    : sunEl === "Air"
+    ? "Your mental energy is heightened today. A conversation or idea may arrive that shifts your perspective in an unexpected way."
+    : "Your emotional antenna is especially sensitive today. Honor what you feel — it carries information your mind hasn't processed yet.";
 
   return `Good morning, ${name}.
 
@@ -294,9 +254,7 @@ function generateTransitSummary(chart: NatalChart): string {
 
     // Pick the top 2-3 most significant transit aspects
     const significant = transits.aspects
-      .filter(a =>
-        ["conjunction", "opposition", "square", "trine"].includes(a.aspect),
-      )
+      .filter(a => ["conjunction", "opposition", "square", "trine"].includes(a.aspect))
       .slice(0, 3);
 
     if (significant.length === 0) return "";
@@ -320,23 +278,12 @@ function generateTransitSummary(chart: NatalChart): string {
   }
 }
 
-function generateOracleResponse(
-  name: string,
-  chart: NatalChart,
-  sys: SimplifiedSystems,
-  question: string,
-  _recentContext: string,
-): string {
+function generateOracleResponse(name: string, chart: NatalChart, sys: SimplifiedSystems, question: string, _recentContext: string): string {
   const qLower = question.toLowerCase();
   const moonEl = ELEMENTS[chart.moon.sign] ?? "Water";
 
   // Relationship / love questions
-  if (
-    qLower.includes("relationship") ||
-    qLower.includes("love") ||
-    qLower.includes("partner") ||
-    qLower.includes("dating")
-  ) {
+  if (qLower.includes("relationship") || qLower.includes("love") || qLower.includes("partner") || qLower.includes("dating")) {
     return `${name}, your question touches the tenderest territory of the human experience — and your chart has much to say about how you love.
 
 With your ${chart.moon.sign} Moon in the ${ordinal(chart.moon.house)} house, you experience love as a ${moonEl} element experience — ${moonEl === "Water" ? "deep, oceanic, and sometimes overwhelming in its intensity" : moonEl === "Fire" ? "passionate, immediate, and alive with spark" : moonEl === "Earth" ? "steady, embodied, and built on trust over time" : "cerebral, communicative, and expressed through understanding"}.
@@ -349,13 +296,7 @@ What I know to be true about you: you are not here for a love that diminishes yo
   }
 
   // Career / purpose / opportunity
-  if (
-    qLower.includes("career") ||
-    qLower.includes("job") ||
-    qLower.includes("work") ||
-    qLower.includes("opportunity") ||
-    qLower.includes("should i take")
-  ) {
+  if (qLower.includes("career") || qLower.includes("job") || qLower.includes("work") || qLower.includes("opportunity") || qLower.includes("should i take")) {
     return `${name}, decisions about work and purpose are never just practical questions — they are soul questions. Let me look at what your chart reveals.
 
 Your Midheaven in ${chart.midheaven.sign} points toward the kind of work that aligns with your highest expression. This isn't about a specific job title — it's about the energy you're meant to bring to whatever you do.
@@ -370,13 +311,7 @@ Does this opportunity make your ${sys.hdType === "Generator" || sys.hdType === "
   }
 
   // Pattern / why do I keep
-  if (
-    qLower.includes("pattern") ||
-    qLower.includes("keep") ||
-    qLower.includes("repeating") ||
-    qLower.includes("stuck") ||
-    qLower.includes("why do i")
-  ) {
+  if (qLower.includes("pattern") || qLower.includes("keep") || qLower.includes("repeating") || qLower.includes("stuck") || qLower.includes("why do i")) {
     return `${name}, the fact that you can see the pattern means you are already more than halfway through it. Unconscious patterns repeat endlessly. Conscious ones are asking to be transformed.
 
 Your South Node in ${chart.southNode.sign} reveals the patterns you're being asked to release — old identities, old strategies, old definitions of safety that once served you but now hold you back. Your North Node in ${chart.northNode.sign} shows the direction of growth.
@@ -417,29 +352,21 @@ function ordinal(n: number): string {
 export const saveNatalChart = internalMutation({
   args: {
     userId: v.id("users"),
-    sunSign: v.string(),
-    sunHouse: v.number(),
-    moonSign: v.string(),
-    moonHouse: v.number(),
-    ascendantSign: v.string(),
-    midheavenSign: v.string(),
-    northNodeSign: v.string(),
-    northNodeHouse: v.number(),
-    saturnSign: v.string(),
-    saturnHouse: v.number(),
+    sunSign: v.string(), sunHouse: v.number(),
+    moonSign: v.string(), moonHouse: v.number(),
+    ascendantSign: v.string(), midheavenSign: v.string(),
+    northNodeSign: v.string(), northNodeHouse: v.number(),
+    saturnSign: v.string(), saturnHouse: v.number(),
     houseSystem: v.string(),
     fullChartJson: v.string(),
   },
   handler: async (ctx, args) => {
     const existing = await ctx.db
       .query("natalCharts")
-      .withIndex("by_userId", q => q.eq("userId", args.userId))
+      .withIndex("by_userId", (q) => q.eq("userId", args.userId))
       .first();
     const data = { ...args, createdAt: Date.now() };
-    if (existing) {
-      await ctx.db.patch(existing._id, data);
-      return existing._id;
-    }
+    if (existing) { await ctx.db.patch(existing._id, data); return existing._id; }
     return await ctx.db.insert("natalCharts", data);
   },
 });
@@ -452,24 +379,18 @@ export const saveLifePurpose = internalMutation({
     leadershipStyle: v.string(),
     fulfillmentDrivers: v.string(),
     longTermPath: v.string(),
-    northNodeSign: v.string(),
-    northNodeHouse: v.number(),
+    northNodeSign: v.string(), northNodeHouse: v.number(),
     midheavenSign: v.string(),
-    sunSign: v.string(),
-    sunHouse: v.number(),
-    saturnSign: v.string(),
-    saturnHouse: v.number(),
+    sunSign: v.string(), sunHouse: v.number(),
+    saturnSign: v.string(), saturnHouse: v.number(),
   },
   handler: async (ctx, args) => {
     const existing = await ctx.db
       .query("lifePurposeProfiles")
-      .withIndex("by_userId", q => q.eq("userId", args.userId))
+      .withIndex("by_userId", (q) => q.eq("userId", args.userId))
       .first();
     const data = { ...args, createdAt: Date.now() };
-    if (existing) {
-      await ctx.db.patch(existing._id, data);
-      return existing._id;
-    }
+    if (existing) { await ctx.db.patch(existing._id, data); return existing._id; }
     return await ctx.db.insert("lifePurposeProfiles", data);
   },
 });
@@ -478,43 +399,28 @@ export const saveLifePurpose = internalMutation({
 export const saveCosmicProfile = internalMutation({
   args: {
     userId: v.id("users"),
-    sunSign: v.string(),
-    moonSign: v.string(),
-    risingSign: v.string(),
-    hdType: v.string(),
-    hdAuthority: v.string(),
-    hdProfile: v.string(),
-    lifePurpose: v.string(),
-    evolution: v.string(),
-    radiance: v.string(),
-    lifePathTree: v.string(),
-    soulUrge: v.string(),
-    lifePathNumber: v.number(),
-    expressionNumber: v.number(),
-    soulNumber: v.number(),
+    sunSign: v.string(), moonSign: v.string(), risingSign: v.string(),
+    hdType: v.string(), hdAuthority: v.string(), hdProfile: v.string(),
+    lifePurpose: v.string(), evolution: v.string(), radiance: v.string(),
+    lifePathTree: v.string(), soulUrge: v.string(),
+    lifePathNumber: v.number(), expressionNumber: v.number(), soulNumber: v.number(),
     summary: v.string(),
   },
   handler: async (ctx, args) => {
     const existing = await ctx.db
       .query("cosmicProfiles")
-      .withIndex("by_userId", q => q.eq("userId", args.userId))
+      .withIndex("by_userId", (q) => q.eq("userId", args.userId))
       .first();
     const data = { ...args, generatedAt: Date.now() };
-    if (existing) {
-      await ctx.db.patch(existing._id, data);
-      return existing._id;
-    }
+    if (existing) { await ctx.db.patch(existing._id, data); return existing._id; }
     return await ctx.db.insert("cosmicProfiles", data);
   },
 });
 
 export const saveReading = internalMutation({
   args: {
-    userId: v.id("users"),
-    type: v.string(),
-    title: v.string(),
-    content: v.string(),
-    date: v.string(),
+    userId: v.id("users"), type: v.string(), title: v.string(),
+    content: v.string(), date: v.string(),
   },
   handler: async (ctx, args) => {
     return await ctx.db.insert("readings", { ...args, createdAt: Date.now() });
@@ -545,12 +451,8 @@ export const generateCosmicFingerprint = action({
       endpoint: "pearl:generateCosmicFingerprint",
     });
 
-    const profile: any = await ctx.runQuery(
-      internal.profiles.getUserProfileInternal,
-      { userId },
-    );
-    if (!profile)
-      throw new Error("No profile found. Complete onboarding first.");
+    const profile = await ctx.runQuery(internal.profiles.getUserProfileInternal, { userId }) as Doc<"userProfiles"> | null;
+    if (!profile) throw new Error("No profile found. Complete onboarding first.");
 
     // 1. Real natal chart from Swiss Ephemeris
     const chart = await calculateNatalChart(
@@ -563,16 +465,11 @@ export const generateCosmicFingerprint = action({
     // 2. Save natal chart
     await ctx.runMutation(internal.pearl.saveNatalChart, {
       userId,
-      sunSign: chart.sun.sign,
-      sunHouse: chart.sun.house,
-      moonSign: chart.moon.sign,
-      moonHouse: chart.moon.house,
-      ascendantSign: chart.ascendant.sign,
-      midheavenSign: chart.midheaven.sign,
-      northNodeSign: chart.northNode.sign,
-      northNodeHouse: chart.northNode.house,
-      saturnSign: chart.saturn.sign,
-      saturnHouse: chart.saturn.house,
+      sunSign: chart.sun.sign, sunHouse: chart.sun.house,
+      moonSign: chart.moon.sign, moonHouse: chart.moon.house,
+      ascendantSign: chart.ascendant.sign, midheavenSign: chart.midheaven.sign,
+      northNodeSign: chart.northNode.sign, northNodeHouse: chart.northNode.house,
+      saturnSign: chart.saturn.sign, saturnHouse: chart.saturn.house,
       houseSystem: chart.houseSystem,
       fullChartJson: chart.fullChartJson,
     });
@@ -592,41 +489,26 @@ export const generateCosmicFingerprint = action({
     await ctx.runMutation(internal.pearl.saveLifePurpose, {
       userId,
       ...purpose,
-      northNodeSign: chart.northNode.sign,
-      northNodeHouse: chart.northNode.house,
+      northNodeSign: chart.northNode.sign, northNodeHouse: chart.northNode.house,
       midheavenSign: chart.midheaven.sign,
-      sunSign: chart.sun.sign,
-      sunHouse: chart.sun.house,
-      saturnSign: chart.saturn.sign,
-      saturnHouse: chart.saturn.house,
+      sunSign: chart.sun.sign, sunHouse: chart.sun.house,
+      saturnSign: chart.saturn.sign, saturnHouse: chart.saturn.house,
     });
 
     // 5. HD + Kabbalah + Numerology (real astronomical HD calculations)
-    const sys = await computeSimplifiedSystems(
-      profile.birthDate,
-      profile.birthTime,
-      profile.birthCity,
-      profile.birthCountry,
-    );
+    const sys = await computeSimplifiedSystems(profile.birthDate, profile.birthTime, profile.birthCity, profile.birthCountry);
     const summary = generateFingerprintSummary(profile.displayName, chart, sys);
 
     // 6. Save legacy cosmic profile for existing frontend
     await ctx.runMutation(internal.pearl.saveCosmicProfile, {
       userId,
-      sunSign: chart.sun.sign,
-      moonSign: chart.moon.sign,
-      risingSign: chart.ascendant.sign,
-      hdType: sys.hdType,
-      hdAuthority: sys.hdAuthority,
-      hdProfile: sys.hdProfile,
+      sunSign: chart.sun.sign, moonSign: chart.moon.sign, risingSign: chart.ascendant.sign,
+      hdType: sys.hdType, hdAuthority: sys.hdAuthority, hdProfile: sys.hdProfile,
       lifePurpose: purpose.purposeDirection.slice(0, 200),
       evolution: purpose.longTermPath.slice(0, 200),
       radiance: purpose.careerAlignment.slice(0, 200),
-      lifePathTree: sys.kbSephirah,
-      soulUrge: sys.kbSoulUrge,
-      lifePathNumber: sys.lifePathNumber,
-      expressionNumber: sys.expressionNumber,
-      soulNumber: sys.soulNumber,
+      lifePathTree: sys.kbSephirah, soulUrge: sys.kbSoulUrge,
+      lifePathNumber: sys.lifePathNumber, expressionNumber: sys.expressionNumber, soulNumber: sys.soulNumber,
       summary,
     });
 
@@ -645,33 +527,18 @@ export const generateLifePurposeReading = action({
       endpoint: "pearl:generateLifePurposeReading",
     });
 
-    const profile: any = await ctx.runQuery(
-      internal.profiles.getUserProfileInternal,
-      { userId },
-    );
+    const profile = await ctx.runQuery(internal.profiles.getUserProfileInternal, { userId }) as Doc<"userProfiles"> | null;
     if (!profile) throw new Error("No profile found");
 
     const chart = await calculateNatalChart(
-      profile.birthDate,
-      profile.birthTime,
-      profile.birthCity,
-      profile.birthCountry,
+      profile.birthDate, profile.birthTime, profile.birthCity, profile.birthCountry,
     );
-    const sys = await computeSimplifiedSystems(
-      profile.birthDate,
-      profile.birthTime,
-      profile.birthCity,
-      profile.birthCountry,
-    );
+    const sys = await computeSimplifiedSystems(profile.birthDate, profile.birthTime, profile.birthCity, profile.birthCountry);
     const content = generateLifePurposeText(profile.displayName, chart, sys);
     const today = new Date().toISOString().split("T")[0];
 
     await ctx.runMutation(internal.pearl.saveReading, {
-      userId,
-      type: "life_purpose",
-      title: "Why Am I Here?",
-      content,
-      date: today,
+      userId, type: "life_purpose", title: "Why Am I Here?", content, date: today,
     });
 
     return content;
@@ -689,52 +556,23 @@ export const generateDailyBrief = action({
       endpoint: "pearl:generateDailyBrief",
     });
 
-    const profile: any = await ctx.runQuery(
-      internal.profiles.getUserProfileInternal,
-      { userId },
-    );
+    const profile = await ctx.runQuery(internal.profiles.getUserProfileInternal, { userId }) as Doc<"userProfiles"> | null;
     if (!profile) throw new Error("No profile found");
 
     const chart = await calculateNatalChart(
-      profile.birthDate,
-      profile.birthTime,
-      profile.birthCity,
-      profile.birthCountry,
+      profile.birthDate, profile.birthTime, profile.birthCity, profile.birthCountry,
     );
-    const sys = await computeSimplifiedSystems(
-      profile.birthDate,
-      profile.birthTime,
-      profile.birthCity,
-      profile.birthCountry,
-    );
+    const sys = await computeSimplifiedSystems(profile.birthDate, profile.birthTime, profile.birthCity, profile.birthCountry);
     const today = new Date();
-    const dayOfWeek = [
-      "Sunday",
-      "Monday",
-      "Tuesday",
-      "Wednesday",
-      "Thursday",
-      "Friday",
-      "Saturday",
-    ][today.getDay()];
+    const dayOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][today.getDay()];
     const dateStr = today.toISOString().split("T")[0];
 
     // Real transit aspects
     const transitSummary = generateTransitSummary(chart);
-    const content = generateDailyBriefText(
-      profile.displayName,
-      chart,
-      sys,
-      dayOfWeek,
-      transitSummary,
-    );
+    const content = generateDailyBriefText(profile.displayName, chart, sys, dayOfWeek, transitSummary);
 
     await ctx.runMutation(internal.pearl.saveReading, {
-      userId,
-      type: "daily_brief",
-      title: `Cosmic Brief — ${dayOfWeek}`,
-      content,
-      date: dateStr,
+      userId, type: "daily_brief", title: `Cosmic Brief — ${dayOfWeek}`, content, date: dateStr,
     });
 
     return content;
@@ -755,50 +593,25 @@ export const askOracle = action({
       endpoint: "pearl:askOracle",
     });
 
-    const profile: any = await ctx.runQuery(
-      internal.profiles.getUserProfileInternal,
-      { userId },
-    );
+    const profile = await ctx.runQuery(internal.profiles.getUserProfileInternal, { userId }) as Doc<"userProfiles"> | null;
     if (!profile) throw new Error("No profile found");
 
     const chart = await calculateNatalChart(
-      profile.birthDate,
-      profile.birthTime,
-      profile.birthCity,
-      profile.birthCountry,
+      profile.birthDate, profile.birthTime, profile.birthCity, profile.birthCountry,
     );
-    const sys = await computeSimplifiedSystems(
-      profile.birthDate,
-      profile.birthTime,
-      profile.birthCity,
-      profile.birthCountry,
-    );
+    const sys = await computeSimplifiedSystems(profile.birthDate, profile.birthTime, profile.birthCity, profile.birthCountry);
 
     // Get recent messages for context
-    const messages: any[] = await ctx.runQuery(
-      internal.oracle.getMessagesInternal,
-      { conversationId },
-    );
+    const messages = await ctx.runQuery(internal.oracle.getMessagesInternal, { conversationId }) as Doc<"messages">[];
     const recentContext = messages
       .slice(-6)
-      .map(
-        (m: any) =>
-          `${m.role === "user" ? profile.displayName : "Pearl"}: ${m.content}`,
-      )
+      .map((m) => `${m.role === "user" ? profile.displayName : "Pearl"}: ${m.content}`)
       .join("\n\n");
 
-    const answer = generateOracleResponse(
-      profile.displayName,
-      chart,
-      sys,
-      question,
-      recentContext,
-    );
+    const answer = generateOracleResponse(profile.displayName, chart, sys, question, recentContext);
 
     await ctx.runMutation(internal.oracle.addMessageInternal, {
-      conversationId,
-      role: "oracle",
-      content: answer,
+      conversationId, role: "oracle", content: answer,
     });
 
     return answer;
@@ -811,21 +624,15 @@ export const askOracle = action({
 
 export const getTransits = action({
   args: {},
-  handler: async ctx => {
+  handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    const profile: any = await ctx.runQuery(
-      internal.profiles.getUserProfileInternal,
-      { userId },
-    );
+    const profile = await ctx.runQuery(internal.profiles.getUserProfileInternal, { userId }) as Doc<"userProfiles"> | null;
     if (!profile) throw new Error("No profile found");
 
     const chart = await calculateNatalChart(
-      profile.birthDate,
-      profile.birthTime,
-      profile.birthCity,
-      profile.birthCountry,
+      profile.birthDate, profile.birthTime, profile.birthCity, profile.birthCountry,
     );
     const transitChart = calculateTransitChart(chart);
 
@@ -839,21 +646,15 @@ export const getTransits = action({
 
 export const getProgressions = action({
   args: {},
-  handler: async ctx => {
+  handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    const profile: any = await ctx.runQuery(
-      internal.profiles.getUserProfileInternal,
-      { userId },
-    );
+    const profile = await ctx.runQuery(internal.profiles.getUserProfileInternal, { userId }) as Doc<"userProfiles"> | null;
     if (!profile) throw new Error("No profile found");
 
     const progressed = await calculateProgressedChart(
-      profile.birthDate,
-      profile.birthTime,
-      profile.birthCity,
-      profile.birthCountry,
+      profile.birthDate, profile.birthTime, profile.birthCity, profile.birthCountry,
     );
 
     return {
@@ -867,13 +668,11 @@ export const getProgressions = action({
         degree: progressed.progressedMoon.degree,
         degreeInSign: progressed.progressedMoon.degree % 30,
       },
-      progressedAscendant: progressed.progressedAscendant
-        ? {
-            sign: progressed.progressedAscendant.sign,
-            degree: progressed.progressedAscendant.degree,
-            degreeInSign: progressed.progressedAscendant.degree % 30,
-          }
-        : undefined,
+      progressedAscendant: progressed.progressedAscendant ? {
+        sign: progressed.progressedAscendant.sign,
+        degree: progressed.progressedAscendant.degree,
+        degreeInSign: progressed.progressedAscendant.degree % 30,
+      } : undefined,
       yearsProgressed: progressed.yearsProgressed,
     };
   },
