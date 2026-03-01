@@ -1,40 +1,40 @@
-name: "CI"
+name: 🧪 CI
 
 on:
-  pull_request:
-    branches: [main]
-  push:
-    branches: [main]
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
 
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  quality:
-    name: Lint, Typecheck & Build
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+  quality:
+    name: Lint, Typecheck & Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
 
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
 
-      - name: Lint (Biome)
-        run: bun run lint
+      - name: Lint (Biome)
+        run: bun run lint
 
-      - name: Typecheck
-        run: bun run typecheck
+      - name: Typecheck
+        run: bun run typecheck
 
-      - name: Build
-        run: bun run build
-        env:
-          VITE_CONVEX_URL: ${{ secrets.VITE_CONVEX_URL }}
+      - name: Build
+        run: bun run build
+        env:
+          VITE_CONVEX_URL: ${{ secrets.VITE_CONVEX_URL }}
