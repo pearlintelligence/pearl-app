@@ -96,8 +96,10 @@ function signFromDeg(lon: number): string {
 function HousesGrid({ chartData }: { chartData: any }) {
   if (!chartData?.houses) return null;
 
-  // houses is number[] (raw ecliptic degrees)
-  const houses: number[] = chartData.houses;
+  // houses is number[] — index 0 unused, indices 1-12 are the 12 house cusps
+  const rawHouses: number[] = chartData.houses;
+  // Take only houses 1-12 (skip index 0 if array has 13 elements)
+  const houses = rawHouses.length === 13 ? rawHouses.slice(1) : rawHouses.slice(0, 12);
 
   return (
     <Card className="bg-pearl-deep/80 border-pearl-gold/10">
