@@ -44,7 +44,8 @@ const PLANET_MEANINGS: Record<string, string> = {
 
 interface PlanetData {
   sign: string;
-  degreeInSign: number;
+  degreeInSign?: number;
+  degree?: number;
   house: number;
 }
 
@@ -53,6 +54,7 @@ function PlanetRow({ name, data }: { name: string; data: PlanetData }) {
   const label = PLANET_LABELS[name] || name;
   const meaning = PLANET_MEANINGS[name] || "";
   const signSymbol = SIGN_SYMBOLS[data.sign] || "";
+  const deg = data.degreeInSign ?? (data.degree != null ? data.degree % 30 : null);
 
   return (
     <div className="flex items-center gap-4 py-3 px-4 rounded-lg hover:bg-pearl-surface/50 transition-colors group">
@@ -68,9 +70,11 @@ function PlanetRow({ name, data }: { name: string; data: PlanetData }) {
           <span className="text-pearl-gold-light font-heading text-base">
             {signSymbol} {data.sign}
           </span>
-          <span className="text-xs text-pearl-muted font-body">
-            {data.degreeInSign.toFixed(1)}°
-          </span>
+          {deg != null && (
+            <span className="text-xs text-pearl-muted font-body">
+              {deg.toFixed(1)}°
+            </span>
+          )}
         </div>
       </div>
       <div className="text-right">
@@ -81,8 +85,19 @@ function PlanetRow({ name, data }: { name: string; data: PlanetData }) {
   );
 }
 
+// Convert ecliptic degree to sign name
+function signFromDeg(lon: number): string {
+  const signs = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
+    "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"];
+  const normalized = ((lon % 360) + 360) % 360;
+  return signs[Math.floor(normalized / 30)];
+}
+
 function HousesGrid({ chartData }: { chartData: any }) {
   if (!chartData?.houses) return null;
+
+  // houses is number[] (raw ecliptic degrees)
+  const houses: number[] = chartData.houses;
 
   return (
     <Card className="bg-pearl-deep/80 border-pearl-gold/10">
@@ -92,20 +107,24 @@ function HousesGrid({ chartData }: { chartData: any }) {
           <h3 className="font-heading text-lg text-pearl-warm">The 12 Houses</h3>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-          {chartData.houses.map((house: any, i: number) => (
-            <div
-              key={i}
-              className="p-3 rounded-lg bg-pearl-surface/30 border border-pearl-gold/5 hover:border-pearl-gold/15 transition-colors"
-            >
-              <div className="text-xs text-pearl-muted font-body mb-1">House {i + 1}</div>
-              <div className="text-sm font-heading text-pearl-gold-light">
-                {SIGN_SYMBOLS[house.sign] || ""} {house.sign}
+          {houses.map((degree: number, i: number) => {
+            const sign = signFromDeg(degree);
+            const degInSign = degree % 30;
+            return (
+              <div
+                key={i}
+                className="p-3 rounded-lg bg-pearl-surface/30 border border-pearl-gold/5 hover:border-pearl-gold/15 transition-colors"
+              >
+                <div className="text-xs text-pearl-muted font-body mb-1">House {i + 1}</div>
+                <div className="text-sm font-heading text-pearl-gold-light">
+                  {SIGN_SYMBOLS[sign] || ""} {sign}
+                </div>
+                <div className="text-xs text-pearl-muted font-body mt-0.5">
+                  {degInSign.toFixed(1)}°
+                </div>
               </div>
-              <div className="text-xs text-pearl-muted font-body mt-0.5">
-                {house.degree.toFixed(1)}°
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </CardContent>
     </Card>
