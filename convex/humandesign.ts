@@ -82,6 +82,7 @@ export type CenterName =
   | "Root";
 
 /** Which center each gate belongs to */
+// @ts-expect-error Lookup table used by future HD features
 const GATE_TO_CENTER: Record<number, CenterName> = {
   // Head Center (3 gates)
   64: "Head", 61: "Head", 63: "Head",
