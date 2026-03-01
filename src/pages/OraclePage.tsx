@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/react";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { ArrowUp, Mic, MicOff, Sparkles, Volume2, VolumeX } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";

@@ -20,6 +20,7 @@ import type * as lifePurpose from "../lifePurpose.js";
 import type * as oracle from "../oracle.js";
 import type * as pearl from "../pearl.js";
 import type * as profiles from "../profiles.js";
+import type * as rateLimit from "../rateLimit.js";
 import type * as readings from "../readings.js";
 import type * as seedTestUser from "../seedTestUser.js";
 import type * as testAuth from "../testAuth.js";
@@ -45,6 +46,7 @@ declare const fullApi: ApiFromModules<{
   oracle: typeof oracle;
   pearl: typeof pearl;
   profiles: typeof profiles;
+  rateLimit: typeof rateLimit;
   readings: typeof readings;
   seedTestUser: typeof seedTestUser;
   testAuth: typeof testAuth;
