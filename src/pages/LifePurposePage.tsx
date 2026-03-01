@@ -1,6 +1,8 @@
-import { useQuery } from "convex/react";
-import { Compass, Briefcase, Crown, Heart, Mountain } from "lucide-react";
+import { useAction, useQuery } from "convex/react";
+import { Compass, Briefcase, Crown, Heart, Mountain, RefreshCw } from "lucide-react";
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { api } from "../../convex/_generated/api";
 
 const SIGN_SYMBOLS: Record<string, string> = {
@@ -44,6 +46,8 @@ function PurposeSection({
 
 export function LifePurposePage() {
   const lifePurpose = useQuery(api.profiles.getLifePurpose);
+  const generateFingerprint = useAction(api.pearl.generateCosmicFingerprint);
+  const [generating, setGenerating] = useState(false);
 
   if (!lifePurpose) {
     return (
@@ -52,12 +56,36 @@ export function LifePurposePage() {
           <div className="absolute inset-0 rounded-full bg-pearl-gold/10 blur-xl sacred-breathe" />
           <div className="absolute inset-[25%] rounded-full bg-pearl-gold/20 animate-pulse" />
         </div>
-        <h2 className="text-xl font-heading text-pearl-warm mb-2">
-          Synthesizing Your Life Purpose
-        </h2>
-        <p className="text-pearl-muted font-body text-sm">
-          Pearl is weaving together the threads of your natal chart into a unified purpose narrative.
-        </p>
+        {generating ? (
+          <>
+            <h2 className="text-xl font-heading text-pearl-warm mb-2">
+              Synthesizing Your Life Purpose
+            </h2>
+            <p className="text-pearl-muted font-body text-sm">
+              Pearl is weaving together the threads of your natal chart into a unified purpose narrative…
+            </p>
+          </>
+        ) : (
+          <>
+            <h2 className="text-xl font-heading text-pearl-warm mb-2">
+              Your Life Purpose Awaits
+            </h2>
+            <p className="text-pearl-muted font-body text-sm mb-6">
+              Generate your five-dimension life purpose synthesis from your natal chart.
+            </p>
+            <Button
+              onClick={async () => {
+                setGenerating(true);
+                try { await generateFingerprint(); } catch (e) { console.error(e); }
+                setGenerating(false);
+              }}
+              className="bg-pearl-gold/20 hover:bg-pearl-gold/30 text-pearl-gold border border-pearl-gold/30 font-body rounded-full px-6"
+            >
+              <RefreshCw className="size-4 mr-2" />
+              Generate Life Purpose
+            </Button>
+          </>
+        )}
       </div>
     );
   }

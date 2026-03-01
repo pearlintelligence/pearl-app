@@ -1,6 +1,8 @@
-import { useQuery } from "convex/react";
-import { Compass, Globe2, Moon, Sun, Orbit } from "lucide-react";
+import { useAction, useQuery } from "convex/react";
+import { Compass, Globe2, Moon, Sun, Orbit, RefreshCw } from "lucide-react";
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { api } from "../../convex/_generated/api";
 
 // Zodiac sign symbols
@@ -113,6 +115,8 @@ function HousesGrid({ chartData }: { chartData: any }) {
 export function BlueprintPage() {
   const natalChart = useQuery(api.profiles.getNatalChart);
   const profile = useQuery(api.profiles.getUserProfile);
+  const generateFingerprint = useAction(api.pearl.generateCosmicFingerprint);
+  const [generating, setGenerating] = useState(false);
 
   if (!natalChart) {
     return (
@@ -121,12 +125,36 @@ export function BlueprintPage() {
           <div className="absolute inset-0 rounded-full bg-pearl-gold/10 blur-xl sacred-breathe" />
           <div className="absolute inset-[25%] rounded-full bg-pearl-gold/20 animate-pulse" />
         </div>
-        <h2 className="text-xl font-heading text-pearl-warm mb-2">
-          Calculating Your Blueprint
-        </h2>
-        <p className="text-pearl-muted font-body text-sm">
-          Your natal chart is being calculated from the precise positions of the stars at your birth.
-        </p>
+        {generating ? (
+          <>
+            <h2 className="text-xl font-heading text-pearl-warm mb-2">
+              Calculating Your Blueprint
+            </h2>
+            <p className="text-pearl-muted font-body text-sm">
+              Your natal chart is being calculated from the precise positions of the stars at your birth…
+            </p>
+          </>
+        ) : (
+          <>
+            <h2 className="text-xl font-heading text-pearl-warm mb-2">
+              Your Blueprint Awaits
+            </h2>
+            <p className="text-pearl-muted font-body text-sm mb-6">
+              Generate your full natal chart from the precise positions of the celestial bodies at your birth.
+            </p>
+            <Button
+              onClick={async () => {
+                setGenerating(true);
+                try { await generateFingerprint(); } catch (e) { console.error(e); }
+                setGenerating(false);
+              }}
+              className="bg-pearl-gold/20 hover:bg-pearl-gold/30 text-pearl-gold border border-pearl-gold/30 font-body rounded-full px-6"
+            >
+              <RefreshCw className="size-4 mr-2" />
+              Generate Natal Chart
+            </Button>
+          </>
+        )}
       </div>
     );
   }
