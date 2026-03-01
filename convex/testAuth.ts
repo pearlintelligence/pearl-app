@@ -3,10 +3,10 @@ import { createAccount, retrieveAccount } from "@convex-dev/auth/server";
 import { Scrypt } from "lucia";
 import type { DataModel } from "./_generated/dataModel";
 
-const TEST_EMAIL_DOMAINS = ["test.local", "innerpearl.ai"];
+const TEST_EMAIL_DOMAINS = ["test.local"];
 
 function isTestEmail(email: string): boolean {
-  return TEST_EMAIL_DOMAINS.some((d) => email.endsWith(`@${d}`));
+  return TEST_EMAIL_DOMAINS.some(d => email.endsWith(`@${d}`));
 }
 
 export const TestCredentials = ConvexCredentials<DataModel>({
@@ -25,7 +25,7 @@ export const TestCredentials = ConvexCredentials<DataModel>({
     const flow = params.flow as string;
 
     if (!email || !isTestEmail(email)) {
-      throw new Error("Only @test.local emails allowed for test auth");
+      throw new Error("Only @test.local emails are allowed for test auth");
     }
 
     if (!password || password.length < 6) {

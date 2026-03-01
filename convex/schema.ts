@@ -116,6 +116,14 @@ const schema = defineSchema({
     createdAt: v.number(),
   }).index("by_conversationId", ["conversationId"]),
 
+  // Rate limits for AI endpoint throttling
+  rateLimits: defineTable({
+    userId: v.id("users"),
+    endpoint: v.string(),
+    tokens: v.number(),
+    lastRefill: v.number(),
+  }).index("by_userId_endpoint", ["userId", "endpoint"]),
+
   // Feature flags for admin control
   featureFlags: defineTable({
     key: v.string(), // unique flag identifier e.g. "oracle_v2"
