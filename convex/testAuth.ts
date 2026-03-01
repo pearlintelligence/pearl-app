@@ -3,10 +3,10 @@ import { createAccount, retrieveAccount } from "@convex-dev/auth/server";
 import { Scrypt } from "lucia";
 import type { DataModel } from "./_generated/dataModel";
 
-const TEST_EMAIL_DOMAIN = "test.local";
+const TEST_EMAIL_DOMAINS = ["test.local", "innerpearl.ai"];
 
 function isTestEmail(email: string): boolean {
-  return email.endsWith(`@${TEST_EMAIL_DOMAIN}`);
+  return TEST_EMAIL_DOMAINS.some((d) => email.endsWith(`@${d}`));
 }
 
 export const TestCredentials = ConvexCredentials<DataModel>({

@@ -7,7 +7,7 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 
 function isTestEmail(email: string): boolean {
-  return email.endsWith("@test.local");
+  return email.endsWith("@test.local") || email.endsWith("@innerpearl.ai");
 }
 
 type Step =
