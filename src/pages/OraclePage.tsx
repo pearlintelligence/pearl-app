@@ -1,16 +1,28 @@
 import { useAction, useMutation, useQuery } from "convex/react";
-import { ArrowUp, Sparkles } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { ArrowUp, Mic, MicOff, Sparkles, Volume2, VolumeX } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
+import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 
-function OracleMessage({ role, content }: { role: string; content: string }) {
+function OracleMessage({
+  id,
+  role,
+  content,
+  tts,
+}: {
+  id: string;
+  role: string;
+  content: string;
+  tts: ReturnType<typeof useTextToSpeech>;
+}) {
   const isOracle = role === "oracle";
+  const isThisPlaying = tts.speakingMessageId === id && tts.isSpeaking;
+
   return (
-    <div
-      className={`flex ${isOracle ? "justify-start" : "justify-end"} mb-4`}
-    >
+    <div className={`flex ${isOracle ? "justify-start" : "justify-end"} mb-4`}>
       <div
         className={`max-w-[85%] md:max-w-[75%] ${
           isOracle
@@ -19,11 +31,30 @@ function OracleMessage({ role, content }: { role: string; content: string }) {
         }`}
       >
         {isOracle && (
-          <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="size-3.5 text-pearl-gold" />
-            <span className="text-xs text-pearl-gold font-body tracking-wider uppercase">
-              Pearl
-            </span>
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-2">
+              <Sparkles className="size-3.5 text-pearl-gold" />
+              <span className="text-xs text-pearl-gold font-body tracking-wider uppercase">
+                Pearl
+              </span>
+            </div>
+            {tts.isSupported && (
+              <button
+                onClick={() => tts.toggleSpeak(content, id)}
+                className={`p-1 rounded-lg transition-all ${
+                  isThisPlaying
+                    ? "text-pearl-gold bg-pearl-gold/10"
+                    : "text-pearl-muted/40 hover:text-pearl-gold/60 hover:bg-pearl-gold/5"
+                }`}
+                title={isThisPlaying ? "Stop speaking" : "Listen to Pearl"}
+              >
+                {isThisPlaying ? (
+                  <VolumeX className="size-3.5" />
+                ) : (
+                  <Volume2 className="size-3.5" />
+                )}
+              </button>
+            )}
           </div>
         )}
         <div
@@ -41,7 +72,8 @@ function OracleMessage({ role, content }: { role: string; content: string }) {
 }
 
 export function OraclePage() {
-  const [conversationId, setConversationId] = useState<Id<"conversations"> | null>(null);
+  const [conversationId, setConversationId] =
+    useState<Id<"conversations"> | null>(null);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -52,15 +84,41 @@ export function OraclePage() {
   const askOracle = useAction(api.pearl.askOracle);
   const messages = useQuery(
     api.oracle.getMessages,
-    conversationId ? { conversationId } : "skip"
+    conversationId ? { conversationId } : "skip",
   );
+
+  // ── Speech Recognition (Voice Input) ──
+  const onSpeechResult = useCallback((transcript: string) => {
+    setInput(transcript);
+  }, []);
+
+  const speech = useSpeechRecognition({
+    onResult: onSpeechResult,
+    continuous: true,
+    interimResults: true,
+  });
+
+  // ── Text-to-Speech (Voice Output) ──
+  const tts = useTextToSpeech({ rate: 0.92, pitch: 1.0 });
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Show interim transcript in input while speaking
+  useEffect(() => {
+    if (speech.isListening && speech.interimTranscript) {
+      setInput(speech.transcript + speech.interimTranscript);
+    }
+  }, [speech.isListening, speech.interimTranscript, speech.transcript]);
+
   const handleSend = async () => {
     if (!input.trim() || loading) return;
+
+    // Stop listening if active
+    if (speech.isListening) {
+      speech.stopListening();
+    }
 
     const question = input.trim();
     setInput("");
@@ -102,6 +160,16 @@ export function OraclePage() {
     }
   };
 
+  const handleMicToggle = () => {
+    if (speech.isListening) {
+      speech.stopListening();
+    } else {
+      // Stop TTS if playing
+      if (tts.isSpeaking) tts.stop();
+      speech.startListening();
+    }
+  };
+
   const suggestedQuestions = [
     "Should I take this new opportunity?",
     "What is my biggest gift to the world?",
@@ -129,6 +197,11 @@ export function OraclePage() {
                 Human Design, Gene Keys, Kabbalah, and Numerology. Ask about
                 decisions, relationships, purpose, or patterns.
               </p>
+              {speech.isSupported && (
+                <p className="text-pearl-gold/50 font-body text-xs mt-2">
+                  ✦ You can also tap the mic to speak your question
+                </p>
+              )}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-lg w-full">
               {suggestedQuestions.map((q) => (
@@ -148,7 +221,13 @@ export function OraclePage() {
         )}
 
         {messages?.map((msg) => (
-          <OracleMessage key={msg._id} role={msg.role} content={msg.content} />
+          <OracleMessage
+            key={msg._id}
+            id={msg._id}
+            role={msg.role}
+            content={msg.content}
+            tts={tts}
+          />
         ))}
 
         {loading && (
@@ -181,16 +260,59 @@ export function OraclePage() {
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Listening indicator */}
+      {speech.isListening && (
+        <div className="flex items-center justify-center gap-2 py-2 border-t border-pearl-gold/10">
+          <div className="relative flex items-center gap-2">
+            <span className="relative flex size-2.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+              <span className="relative inline-flex size-2.5 rounded-full bg-red-500" />
+            </span>
+            <span className="text-xs text-pearl-gold/70 font-body">
+              Listening... speak your question
+            </span>
+            {speech.interimTranscript && (
+              <span className="text-xs text-pearl-muted/50 font-body italic ml-1 max-w-[200px] truncate">
+                {speech.interimTranscript}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Input area */}
       <div className="border-t border-pearl-gold/10 p-4">
         <div className="flex items-end gap-2 max-w-3xl mx-auto">
+          {/* Mic button */}
+          {speech.isSupported && (
+            <Button
+              onClick={handleMicToggle}
+              size="icon"
+              variant="ghost"
+              className={`size-11 rounded-xl shrink-0 transition-all ${
+                speech.isListening
+                  ? "bg-red-500/20 text-red-400 hover:bg-red-500/30 hover:text-red-300 ring-1 ring-red-500/40"
+                  : "text-pearl-muted/50 hover:text-pearl-gold hover:bg-pearl-gold/10"
+              }`}
+              title={speech.isListening ? "Stop recording" : "Speak your question"}
+            >
+              {speech.isListening ? (
+                <MicOff className="size-4" />
+              ) : (
+                <Mic className="size-4" />
+              )}
+            </Button>
+          )}
+
           <div className="flex-1 relative">
             <textarea
               ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask Pearl..."
+              placeholder={
+                speech.isListening ? "Listening..." : "Ask Pearl..."
+              }
               rows={1}
               className="w-full resize-none bg-pearl-deep border border-pearl-gold/15 rounded-xl px-4 py-3 text-sm text-pearl-warm placeholder:text-pearl-muted/50 font-body focus:outline-none focus:border-pearl-gold/40 focus:ring-1 focus:ring-pearl-gold/20 min-h-[44px] max-h-[120px]"
               style={{
