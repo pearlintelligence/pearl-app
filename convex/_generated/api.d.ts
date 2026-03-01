@@ -9,9 +9,11 @@
  */
 
 import type * as ViktorSpacesEmail from "../ViktorSpacesEmail.js";
+import type * as admin from "../admin.js";
 import type * as auth from "../auth.js";
 import type * as cleanup from "../cleanup.js";
 import type * as constants from "../constants.js";
+import type * as featureFlags from "../featureFlags.js";
 import type * as http from "../http.js";
 import type * as oracle from "../oracle.js";
 import type * as pearl from "../pearl.js";
@@ -30,9 +32,11 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   ViktorSpacesEmail: typeof ViktorSpacesEmail;
+  admin: typeof admin;
   auth: typeof auth;
   cleanup: typeof cleanup;
   constants: typeof constants;
+  featureFlags: typeof featureFlags;
   http: typeof http;
   oracle: typeof oracle;
   pearl: typeof pearl;

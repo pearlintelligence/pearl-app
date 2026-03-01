@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from "react-router-dom";
+import { AdminRoute } from "./components/AdminRoute";
 import { AppLayout } from "./components/AppLayout";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -16,6 +17,14 @@ import {
   SettingsPage,
   SignupPage,
 } from "./pages";
+import {
+  AdminDashboardPage,
+  AnalyticsPage,
+  BillingPage,
+  FeatureFlagsPage,
+  PlatformToolsPage,
+  UserManagementPage,
+} from "./pages/admin";
 
 function App() {
   return (
@@ -34,13 +43,23 @@ function App() {
           {/* Onboarding — protected but no sidebar */}
           <Route path="/onboarding" element={<OnboardingPage />} />
 
-          {/* Reading page — protected but fullscreen */}
+          {/* Main app routes — protected with sidebar */}
           <Route element={<ProtectedRoute />}>
             <Route element={<AppLayout />}>
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/oracle" element={<OraclePage />} />
               <Route path="/reading" element={<ReadingPage />} />
               <Route path="/settings" element={<SettingsPage />} />
+
+              {/* Admin routes — additional admin check */}
+              <Route element={<AdminRoute />}>
+                <Route path="/admin" element={<AdminDashboardPage />} />
+                <Route path="/admin/flags" element={<FeatureFlagsPage />} />
+                <Route path="/admin/users" element={<UserManagementPage />} />
+                <Route path="/admin/analytics" element={<AnalyticsPage />} />
+                <Route path="/admin/billing" element={<BillingPage />} />
+                <Route path="/admin/tools" element={<PlatformToolsPage />} />
+              </Route>
             </Route>
           </Route>
 

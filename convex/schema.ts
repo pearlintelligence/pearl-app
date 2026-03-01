@@ -75,6 +75,17 @@ const schema = defineSchema({
     content: v.string(),
     createdAt: v.number(),
   }).index("by_conversationId", ["conversationId"]),
+
+  // Feature flags for admin control
+  featureFlags: defineTable({
+    key: v.string(), // unique flag identifier e.g. "oracle_v2"
+    name: v.string(), // human-readable name
+    description: v.string(),
+    enabled: v.boolean(),
+    createdBy: v.id("users"),
+    updatedAt: v.number(),
+    createdAt: v.number(),
+  }).index("by_key", ["key"]),
 });
 
 export default schema;

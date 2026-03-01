@@ -1,11 +1,17 @@
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useQuery } from "convex/react";
 import {
+  BarChart3,
+  CreditCard,
+  Flag,
   LayoutDashboard,
   LogOut,
   MessageCircle,
   ScrollText,
   Settings,
+  Shield,
+  Users,
+  Wrench,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { api } from "../../convex/_generated/api";
@@ -23,6 +29,7 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -34,6 +41,15 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/oracle", label: "Ask Pearl", icon: MessageCircle },
   { href: "/reading", label: "Life Purpose", icon: ScrollText },
+];
+
+const adminNavItems = [
+  { href: "/admin", label: "Overview", icon: Shield },
+  { href: "/admin/users", label: "Users", icon: Users },
+  { href: "/admin/flags", label: "Feature Flags", icon: Flag },
+  { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
+  { href: "/admin/billing", label: "Billing", icon: CreditCard },
+  { href: "/admin/tools", label: "Platform Tools", icon: Wrench },
 ];
 
 function NavLink({
@@ -63,6 +79,7 @@ function NavLink({
 
 function SidebarNav() {
   const location = useLocation();
+  const isAdmin = useQuery(api.admin.isAdmin);
 
   return (
     <SidebarContent>
@@ -81,6 +98,28 @@ function SidebarNav() {
           </SidebarMenu>
         </SidebarGroupContent>
       </SidebarGroup>
+
+      {/* Admin section — only visible for @innerpearl.ai emails */}
+      {isAdmin && (
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-pearl-gold/60 text-xs font-body uppercase tracking-wider">
+            Admin
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {adminNavItems.map((item) => (
+                <NavLink
+                  key={item.href}
+                  href={item.href}
+                  label={item.label}
+                  icon={item.icon}
+                  isActive={location.pathname === item.href}
+                />
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      )}
     </SidebarContent>
   );
 }
