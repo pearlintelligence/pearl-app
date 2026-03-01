@@ -4,9 +4,9 @@
  * Architecture:
  *   Swiss Ephemeris (astronomy-engine) → Natal Chart → Life Purpose Engine → Pearl's Interpretation
  * 
- * Systems in v1:
- *   1. Astrology (core) — real Swiss Ephemeris calculations
- *   2. Human Design — simplified mapping (full Rave chart in v2)
+ * Systems:
+ *   1. Astrology (core) — real Swiss Ephemeris calculations via astronomy-engine
+ *   2. Human Design — REAL astronomical calculations (88° solar arc, gate/line resolution)
  *   3. Kabbalah — Tree of Life numerological mapping
  *   4. Numerology — standard Western numerology
  * 
@@ -21,15 +21,18 @@ import {
   calculateTransitChart,
   calculateProgressedChart,
   calculateLifePath,
+  birthToUTC,
+  geocodeCity,
+  getTimezone,
   LIFE_PATH_MEANINGS,
   ELEMENTS,
   type NatalChart,
 } from "./ephemeris";
 import { generateLifePurpose } from "./lifePurpose";
+import { calculateHDChart, type HDChart } from "./humandesign";
 
 // ────────────────────────────────────────────────────────────────
-// Simplified Systems (non-ephemeris)
-// HD, Kabbalah use birth-date-based mappings until full implementations.
+// Unified Systems (real HD calculations + Kabbalah/Numerology)
 // ────────────────────────────────────────────────────────────────
 
 interface SimplifiedSystems {
@@ -37,6 +40,7 @@ interface SimplifiedSystems {
   hdAuthority: string;
   hdProfile: string;
   hdStrategy: string;
+  hdChart: HDChart | null;
   kbSephirah: string;
   kbPath: string;
   kbSoulUrge: string;
@@ -46,30 +50,45 @@ interface SimplifiedSystems {
   lifePathMeaning: string;
 }
 
-function computeSimplifiedSystems(birthDate: string, _birthTime: string | undefined): SimplifiedSystems {
+/**
+ * Compute all supplementary systems.
+ * Human Design now uses REAL astronomical calculations via humandesign.ts.
+ * Kabbalah and Numerology remain birth-date-based mappings.
+ */
+async function computeSimplifiedSystems(
+  birthDate: string,
+  birthTime: string | undefined,
+  birthCity: string,
+  birthCountry: string,
+): Promise<SimplifiedSystems> {
   const date = new Date(birthDate);
   const month = date.getUTCMonth() + 1;
   const day = date.getUTCDate();
   const year = date.getUTCFullYear();
 
-  // ─── Human Design (simplified — full bodygraph in v2) ───
-  const hdHash = (day * 31 + month * 13 + year * 7) % 100;
-  const hdTypes = [
-    { type: "Generator", strategy: "Wait to respond", pct: 37 },
-    { type: "Manifesting Generator", strategy: "Wait to respond, then inform", pct: 33 },
-    { type: "Projector", strategy: "Wait for the invitation", pct: 20 },
-    { type: "Manifestor", strategy: "Inform before acting", pct: 9 },
-    { type: "Reflector", strategy: "Wait a lunar cycle", pct: 1 },
-  ];
-  let hdCum = 0;
-  let hdType = hdTypes[0];
-  for (const t of hdTypes) { hdCum += t.pct; if (hdHash < hdCum) { hdType = t; break; } }
+  // ─── Human Design (REAL astronomical calculations) ───
+  let hdChart: HDChart | null = null;
+  let hdType = "Generator";
+  let hdAuthority = "Sacral";
+  let hdProfile = "1/3 Investigator / Martyr";
+  let hdStrategy = "Wait to respond";
 
-  const authorities = ["Emotional (Solar Plexus)", "Sacral", "Splenic", "Ego/Heart", "Self-Projected", "Mental/Environmental", "Lunar"];
-  const hdAuthority = authorities[hdHash % authorities.length];
+  try {
+    // Geocode and resolve timezone (same as natal chart calculation)
+    const coords = await geocodeCity(birthCity, birthCountry);
+    const lat = coords?.lat ?? 0;
+    const lng = coords?.lng ?? 0;
+    const timezone = await getTimezone(lat, lng);
+    const birthUTC = birthToUTC(birthDate, birthTime, timezone);
 
-  const profiles = ["1/3 Investigator/Martyr", "1/4 Investigator/Opportunist", "2/4 Hermit/Opportunist", "2/5 Hermit/Heretic", "3/5 Martyr/Heretic", "3/6 Martyr/Role Model", "4/6 Opportunist/Role Model", "5/1 Heretic/Investigator", "5/2 Heretic/Hermit", "6/2 Role Model/Hermit", "6/3 Role Model/Martyr", "4/1 Opportunist/Investigator"];
-  const hdProfile = profiles[(day + month) % profiles.length];
+    hdChart = calculateHDChart(birthUTC);
+    hdType = hdChart.type;
+    hdAuthority = hdChart.authority;
+    hdProfile = hdChart.profile;
+    hdStrategy = hdChart.strategy;
+  } catch (e) {
+    console.error("HD calculation failed, using fallback:", e);
+  }
 
   // ─── Kabbalah ───
   const sephiroth = [
@@ -99,10 +118,11 @@ function computeSimplifiedSystems(birthDate: string, _birthTime: string | undefi
   const soulNumber = ((month + year % 100) % 9) + 1;
 
   return {
-    hdType: hdType.type,
+    hdType,
     hdAuthority,
     hdProfile,
-    hdStrategy: hdType.strategy,
+    hdStrategy,
+    hdChart,
     kbSephirah: `${kbSeph.name} — ${kbSeph.meaning}`,
     kbPath,
     kbSoulUrge,
@@ -469,8 +489,8 @@ export const generateCosmicFingerprint = action({
       saturnSign: chart.saturn.sign, saturnHouse: chart.saturn.house,
     });
 
-    // 5. Simplified systems (HD, Kabbalah, Numerology)
-    const sys = computeSimplifiedSystems(profile.birthDate, profile.birthTime);
+    // 5. HD + Kabbalah + Numerology (real astronomical HD calculations)
+    const sys = await computeSimplifiedSystems(profile.birthDate, profile.birthTime, profile.birthCity, profile.birthCountry);
     const summary = generateFingerprintSummary(profile.displayName, chart, sys);
 
     // 6. Save legacy cosmic profile for existing frontend
@@ -502,7 +522,7 @@ export const generateLifePurposeReading = action({
     const chart = await calculateNatalChart(
       profile.birthDate, profile.birthTime, profile.birthCity, profile.birthCountry,
     );
-    const sys = computeSimplifiedSystems(profile.birthDate, profile.birthTime);
+    const sys = await computeSimplifiedSystems(profile.birthDate, profile.birthTime, profile.birthCity, profile.birthCountry);
     const content = generateLifePurposeText(profile.displayName, chart, sys);
     const today = new Date().toISOString().split("T")[0];
 
@@ -526,7 +546,7 @@ export const generateDailyBrief = action({
     const chart = await calculateNatalChart(
       profile.birthDate, profile.birthTime, profile.birthCity, profile.birthCountry,
     );
-    const sys = computeSimplifiedSystems(profile.birthDate, profile.birthTime);
+    const sys = await computeSimplifiedSystems(profile.birthDate, profile.birthTime, profile.birthCity, profile.birthCountry);
     const today = new Date();
     const dayOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][today.getDay()];
     const dateStr = today.toISOString().split("T")[0];
@@ -558,7 +578,7 @@ export const askOracle = action({
     const chart = await calculateNatalChart(
       profile.birthDate, profile.birthTime, profile.birthCity, profile.birthCountry,
     );
-    const sys = computeSimplifiedSystems(profile.birthDate, profile.birthTime);
+    const sys = await computeSimplifiedSystems(profile.birthDate, profile.birthTime, profile.birthCity, profile.birthCountry);
 
     // Get recent messages for context
     const messages: any[] = await ctx.runQuery(internal.oracle.getMessagesInternal, { conversationId });
