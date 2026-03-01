@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/react";
 import { useAction, useQuery } from "convex/react";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -61,7 +62,7 @@ export function ReadingPage() {
     if (reading === null && !generating) {
       setGenerating(true);
       generateReading()
-        .catch(console.error)
+        .catch((e) => Sentry.captureException(e))
         .finally(() => setGenerating(false));
     }
   }, [reading, generating, generateReading]);

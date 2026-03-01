@@ -16,6 +16,7 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import { v } from "convex/values";
 import { action, internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
+import type { Doc } from "./_generated/dataModel";
 import {
   calculateNatalChart,
   calculateTransitChart,
@@ -445,7 +446,7 @@ export const generateCosmicFingerprint = action({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    const profile: any = await ctx.runQuery(internal.profiles.getUserProfileInternal, { userId });
+    const profile = await ctx.runQuery(internal.profiles.getUserProfileInternal, { userId }) as Doc<"userProfiles"> | null;
     if (!profile) throw new Error("No profile found. Complete onboarding first.");
 
     // 1. Real natal chart from Swiss Ephemeris
@@ -516,7 +517,7 @@ export const generateLifePurposeReading = action({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    const profile: any = await ctx.runQuery(internal.profiles.getUserProfileInternal, { userId });
+    const profile = await ctx.runQuery(internal.profiles.getUserProfileInternal, { userId }) as Doc<"userProfiles"> | null;
     if (!profile) throw new Error("No profile found");
 
     const chart = await calculateNatalChart(
@@ -540,7 +541,7 @@ export const generateDailyBrief = action({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    const profile: any = await ctx.runQuery(internal.profiles.getUserProfileInternal, { userId });
+    const profile = await ctx.runQuery(internal.profiles.getUserProfileInternal, { userId }) as Doc<"userProfiles"> | null;
     if (!profile) throw new Error("No profile found");
 
     const chart = await calculateNatalChart(
@@ -572,7 +573,7 @@ export const askOracle = action({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    const profile: any = await ctx.runQuery(internal.profiles.getUserProfileInternal, { userId });
+    const profile = await ctx.runQuery(internal.profiles.getUserProfileInternal, { userId }) as Doc<"userProfiles"> | null;
     if (!profile) throw new Error("No profile found");
 
     const chart = await calculateNatalChart(
@@ -581,10 +582,10 @@ export const askOracle = action({
     const sys = await computeSimplifiedSystems(profile.birthDate, profile.birthTime, profile.birthCity, profile.birthCountry);
 
     // Get recent messages for context
-    const messages: any[] = await ctx.runQuery(internal.oracle.getMessagesInternal, { conversationId });
+    const messages = await ctx.runQuery(internal.oracle.getMessagesInternal, { conversationId }) as Doc<"messages">[];
     const recentContext = messages
       .slice(-6)
-      .map((m: any) => `${m.role === "user" ? profile.displayName : "Pearl"}: ${m.content}`)
+      .map((m) => `${m.role === "user" ? profile.displayName : "Pearl"}: ${m.content}`)
       .join("\n\n");
 
     const answer = generateOracleResponse(profile.displayName, chart, sys, question, recentContext);
@@ -607,7 +608,7 @@ export const getTransits = action({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    const profile: any = await ctx.runQuery(internal.profiles.getUserProfileInternal, { userId });
+    const profile = await ctx.runQuery(internal.profiles.getUserProfileInternal, { userId }) as Doc<"userProfiles"> | null;
     if (!profile) throw new Error("No profile found");
 
     const chart = await calculateNatalChart(
@@ -629,7 +630,7 @@ export const getProgressions = action({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    const profile: any = await ctx.runQuery(internal.profiles.getUserProfileInternal, { userId });
+    const profile = await ctx.runQuery(internal.profiles.getUserProfileInternal, { userId }) as Doc<"userProfiles"> | null;
     if (!profile) throw new Error("No profile found");
 
     const progressed = await calculateProgressedChart(
