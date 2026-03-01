@@ -446,6 +446,11 @@ export const generateCosmicFingerprint = action({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
+    await ctx.runMutation(internal.rateLimit.consume, {
+      userId,
+      endpoint: "pearl:generateCosmicFingerprint",
+    });
+
     const profile = await ctx.runQuery(internal.profiles.getUserProfileInternal, { userId }) as Doc<"userProfiles"> | null;
     if (!profile) throw new Error("No profile found. Complete onboarding first.");
 
@@ -517,6 +522,11 @@ export const generateLifePurposeReading = action({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
+    await ctx.runMutation(internal.rateLimit.consume, {
+      userId,
+      endpoint: "pearl:generateLifePurposeReading",
+    });
+
     const profile = await ctx.runQuery(internal.profiles.getUserProfileInternal, { userId }) as Doc<"userProfiles"> | null;
     if (!profile) throw new Error("No profile found");
 
@@ -540,6 +550,11 @@ export const generateDailyBrief = action({
   handler: async (ctx): Promise<string> => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
+
+    await ctx.runMutation(internal.rateLimit.consume, {
+      userId,
+      endpoint: "pearl:generateDailyBrief",
+    });
 
     const profile = await ctx.runQuery(internal.profiles.getUserProfileInternal, { userId }) as Doc<"userProfiles"> | null;
     if (!profile) throw new Error("No profile found");
@@ -572,6 +587,11 @@ export const askOracle = action({
   handler: async (ctx, { conversationId, question }): Promise<string> => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
+
+    await ctx.runMutation(internal.rateLimit.consume, {
+      userId,
+      endpoint: "pearl:askOracle",
+    });
 
     const profile = await ctx.runQuery(internal.profiles.getUserProfileInternal, { userId }) as Doc<"userProfiles"> | null;
     if (!profile) throw new Error("No profile found");
