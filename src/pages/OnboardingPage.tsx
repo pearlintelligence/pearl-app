@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CountryCombobox, CityCombobox } from "@/components/onboarding/LocationCombobox";
 import { api } from "../../convex/_generated/api";
 
 const STEPS = ["name", "birthDate", "birthTime", "birthPlace", "generating"] as const;
@@ -309,23 +310,23 @@ export function OnboardingPage() {
             </div>
             <div className="space-y-4">
               <div className="space-y-3">
-                <Input
-                  type="text"
-                  placeholder="City (e.g., San Francisco)"
-                  value={formData.birthCity}
-                  onChange={(e) =>
-                    setFormData({ ...formData, birthCity: e.target.value })
-                  }
-                  className="h-12 text-center bg-pearl-deep border-pearl-gold/15 text-pearl-warm placeholder:text-pearl-muted/50 font-body focus:border-pearl-gold/40 focus:ring-pearl-gold/20"
-                />
-                <Input
-                  type="text"
-                  placeholder="Country (e.g., United States)"
+                <CountryCombobox
                   value={formData.birthCountry}
-                  onChange={(e) =>
-                    setFormData({ ...formData, birthCountry: e.target.value })
+                  onChange={(country) =>
+                    setFormData({
+                      ...formData,
+                      birthCountry: country,
+                      // Reset city when country changes
+                      ...(country !== formData.birthCountry ? { birthCity: "" } : {}),
+                    })
                   }
-                  className="h-12 text-center bg-pearl-deep border-pearl-gold/15 text-pearl-warm placeholder:text-pearl-muted/50 font-body focus:border-pearl-gold/40 focus:ring-pearl-gold/20"
+                />
+                <CityCombobox
+                  value={formData.birthCity}
+                  selectedCountry={formData.birthCountry}
+                  onChange={(city) =>
+                    setFormData({ ...formData, birthCity: city })
+                  }
                 />
               </div>
               {error && (
