@@ -1,19 +1,26 @@
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, usePaginatedQuery, useQuery } from "convex/react";
 import {
+  ChevronDown,
   Crown,
   Search,
   Sparkles,
   Trash2,
   UserCheck,
-  UserX,
   Users,
+  UserX,
 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
 import {
   Table,
@@ -23,24 +30,39 @@ import {
   TableHeader,
   TableRow,
 } from "../../components/ui/table";
-import { toast } from "sonner";
+
+const PAGE_SIZE = 50;
 
 export function UserManagementPage() {
-  const users = useQuery(api.admin.listUsers);
+  // Paginated user list — loads one page at a time instead of every user.
+  const {
+    results: users,
+    status,
+    loadMore,
+  } = usePaginatedQuery(
+    api.admin.listUsers,
+    {},
+    { initialNumItems: PAGE_SIZE },
+  );
+  // Dashboard stats for summary cards (avoids re-counting on partial data).
+  const stats = useQuery(api.admin.getDashboardStats);
   const deleteUser = useMutation(api.admin.deleteUser);
   const [search, setSearch] = useState("");
 
+  const isLoadingFirst = status === "LoadingFirstPage";
+  const canLoadMore = status === "CanLoadMore";
+
   const filteredUsers = users?.filter(
-    (u) =>
+    u =>
       u.email.toLowerCase().includes(search.toLowerCase()) ||
       u.name.toLowerCase().includes(search.toLowerCase()) ||
-      (u.birthCity?.toLowerCase().includes(search.toLowerCase()) ?? false)
+      (u.birthCity?.toLowerCase().includes(search.toLowerCase()) ?? false),
   );
 
   const handleDelete = async (userId: Id<"users">, email: string) => {
     if (
       !confirm(
-        `Delete user "${email}" and ALL their data?\n\nThis will remove their profile, readings, conversations, and cosmic profile. This cannot be undone.`
+        `Delete user "${email}" and ALL their data?\n\nThis will remove their profile, readings, conversations, and cosmic profile. This cannot be undone.`,
       )
     )
       return;
@@ -63,13 +85,15 @@ export function UserManagementPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-heading text-pearl-warm">User Management</h1>
+        <h1 className="text-2xl font-heading text-pearl-warm">
+          User Management
+        </h1>
         <p className="text-pearl-muted font-body text-sm mt-1">
           View and manage all platform users
         </p>
       </div>
 
-      {/* Summary Cards */}
+      {/* Summary Cards — use dashboard stats for accurate totals */}
       <div className="grid gap-4 sm:grid-cols-3">
         <Card className="bg-pearl-deep border-pearl-gold/10">
           <CardContent className="p-4 flex items-center gap-3">
@@ -77,7 +101,9 @@ export function UserManagementPage() {
               <Users className="size-5 text-pearl-gold" />
             </div>
             <div>
-              <p className="text-2xl font-heading text-pearl-warm">{users?.length ?? "—"}</p>
+              <p className="text-2xl font-heading text-pearl-warm">
+                {stats?.totalUsers ?? "—"}
+              </p>
               <p className="text-xs text-pearl-muted font-body">Total Users</p>
             </div>
           </CardContent>
@@ -89,7 +115,7 @@ export function UserManagementPage() {
             </div>
             <div>
               <p className="text-2xl font-heading text-pearl-warm">
-                {users?.filter((u) => u.onboardingComplete).length ?? "—"}
+                {stats?.completedOnboarding ?? "—"}
               </p>
               <p className="text-xs text-pearl-muted font-body">Onboarded</p>
             </div>
@@ -102,9 +128,11 @@ export function UserManagementPage() {
             </div>
             <div>
               <p className="text-2xl font-heading text-pearl-warm">
-                {users?.filter((u) => u.hasCosmic).length ?? "—"}
+                {stats?.cosmicProfilesGenerated ?? "—"}
               </p>
-              <p className="text-xs text-pearl-muted font-body">Cosmic Profiles</p>
+              <p className="text-xs text-pearl-muted font-body">
+                Cosmic Profiles
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -119,123 +147,161 @@ export function UserManagementPage() {
               <Input
                 placeholder="Search by name, email, or city..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={e => setSearch(e.target.value)}
                 className="pl-10 bg-pearl-surface border-pearl-gold/15 text-pearl-warm font-body"
               />
             </div>
             <CardTitle className="text-sm font-body text-pearl-muted font-normal">
-              {filteredUsers?.length ?? 0} user{filteredUsers?.length !== 1 ? "s" : ""}
+              {filteredUsers?.length ?? 0} user
+              {filteredUsers?.length !== 1 ? "s" : ""} loaded
             </CardTitle>
           </div>
         </CardHeader>
         <CardContent>
-          {!users ? (
+          {isLoadingFirst ? (
             <div className="space-y-3">
               {Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} className="h-12 shimmer rounded" />
               ))}
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-pearl-gold/10 hover:bg-transparent">
-                    <TableHead className="text-pearl-muted font-body">User</TableHead>
-                    <TableHead className="text-pearl-muted font-body hidden md:table-cell">Status</TableHead>
-                    <TableHead className="text-pearl-muted font-body hidden lg:table-cell">Sign</TableHead>
-                    <TableHead className="text-pearl-muted font-body hidden lg:table-cell">Location</TableHead>
-                    <TableHead className="text-pearl-muted font-body text-center">Readings</TableHead>
-                    <TableHead className="text-pearl-muted font-body text-center hidden sm:table-cell">Convos</TableHead>
-                    <TableHead className="text-pearl-muted font-body hidden md:table-cell">Joined</TableHead>
-                    <TableHead className="text-pearl-muted font-body text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredUsers?.map((user) => (
-                    <TableRow
-                      key={user._id}
-                      className="border-pearl-gold/5 hover:bg-pearl-surface/50"
-                    >
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <div className="min-w-0">
-                            <div className="font-body text-pearl-warm text-sm flex items-center gap-1.5">
-                              {user.name}
-                              {user.isAdmin && (
-                                <Crown className="size-3.5 text-pearl-gold" />
-                              )}
-                            </div>
-                            <div className="font-body text-pearl-muted text-xs truncate">
-                              {user.email}
+            <>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-pearl-gold/10 hover:bg-transparent">
+                      <TableHead className="text-pearl-muted font-body">
+                        User
+                      </TableHead>
+                      <TableHead className="text-pearl-muted font-body hidden md:table-cell">
+                        Status
+                      </TableHead>
+                      <TableHead className="text-pearl-muted font-body hidden lg:table-cell">
+                        Sign
+                      </TableHead>
+                      <TableHead className="text-pearl-muted font-body hidden lg:table-cell">
+                        Location
+                      </TableHead>
+                      <TableHead className="text-pearl-muted font-body text-center">
+                        Readings
+                      </TableHead>
+                      <TableHead className="text-pearl-muted font-body text-center hidden sm:table-cell">
+                        Convos
+                      </TableHead>
+                      <TableHead className="text-pearl-muted font-body hidden md:table-cell">
+                        Joined
+                      </TableHead>
+                      <TableHead className="text-pearl-muted font-body text-right">
+                        Actions
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredUsers?.map(user => (
+                      <TableRow
+                        key={user._id}
+                        className="border-pearl-gold/5 hover:bg-pearl-surface/50"
+                      >
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <div className="min-w-0">
+                              <div className="font-body text-pearl-warm text-sm flex items-center gap-1.5">
+                                {user.name}
+                                {user.isAdmin && (
+                                  <Crown className="size-3.5 text-pearl-gold" />
+                                )}
+                              </div>
+                              <div className="font-body text-pearl-muted text-xs truncate">
+                                {user.email}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        <div className="flex gap-1.5">
-                          {user.onboardingComplete ? (
-                            <Badge className="bg-green-500/15 text-green-400 border-green-500/20 text-xs">
-                              <UserCheck className="size-3 mr-1" />
-                              Onboarded
-                            </Badge>
-                          ) : (
-                            <Badge className="bg-pearl-surface text-pearl-muted border-pearl-gold/10 text-xs">
-                              <UserX className="size-3 mr-1" />
-                              Pending
-                            </Badge>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          <div className="flex gap-1.5">
+                            {user.onboardingComplete ? (
+                              <Badge className="bg-green-500/15 text-green-400 border-green-500/20 text-xs">
+                                <UserCheck className="size-3 mr-1" />
+                                Onboarded
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-pearl-surface text-pearl-muted border-pearl-gold/10 text-xs">
+                                <UserX className="size-3 mr-1" />
+                                Pending
+                              </Badge>
+                            )}
+                            {user.hasCosmic && (
+                              <Badge className="bg-purple-500/15 text-purple-400 border-purple-500/20 text-xs">
+                                <Sparkles className="size-3 mr-1" />
+                                Cosmic
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          <span className="font-body text-pearl-muted text-sm">
+                            {user.sunSign || "—"}
+                          </span>
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          <span className="font-body text-pearl-muted text-sm">
+                            {user.birthCity
+                              ? `${user.birthCity}, ${user.birthCountry}`
+                              : "—"}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <span className="font-body text-pearl-warm text-sm">
+                            {user.totalReadings}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-center hidden sm:table-cell">
+                          <span className="font-body text-pearl-warm text-sm">
+                            {user.totalConversations}
+                          </span>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          <span className="font-body text-pearl-muted text-sm">
+                            {formatDate(user.createdAt)}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {!user.isAdmin && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(user._id, user.email)}
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
                           )}
-                          {user.hasCosmic && (
-                            <Badge className="bg-purple-500/15 text-purple-400 border-purple-500/20 text-xs">
-                              <Sparkles className="size-3 mr-1" />
-                              Cosmic
-                            </Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        <span className="font-body text-pearl-muted text-sm">
-                          {user.sunSign || "—"}
-                        </span>
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        <span className="font-body text-pearl-muted text-sm">
-                          {user.birthCity
-                            ? `${user.birthCity}, ${user.birthCountry}`
-                            : "—"}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <span className="font-body text-pearl-warm text-sm">
-                          {user.totalReadings}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-center hidden sm:table-cell">
-                        <span className="font-body text-pearl-warm text-sm">
-                          {user.totalConversations}
-                        </span>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        <span className="font-body text-pearl-muted text-sm">
-                          {formatDate(user.createdAt)}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {!user.isAdmin && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDelete(user._id, user.email)}
-                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                          >
-                            <Trash2 className="size-4" />
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Load More */}
+              {canLoadMore && (
+                <div className="flex justify-center pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => loadMore(PAGE_SIZE)}
+                    className="border-pearl-gold/15 text-pearl-warm font-body"
+                  >
+                    <ChevronDown className="size-4 mr-2" />
+                    Load more users
+                  </Button>
+                </div>
+              )}
+              {status === "Exhausted" && users && users.length > PAGE_SIZE && (
+                <p className="text-center text-xs text-pearl-muted font-body pt-3">
+                  All users loaded
+                </p>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
