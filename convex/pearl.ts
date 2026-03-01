@@ -1,6 +1,7 @@
 /**
  * Pearl AI — Core generation actions.
- * Uses deterministic cosmic calculations + crafted personalized oracle text.
+ * Uses astronomy-engine for precise Sun/Moon/Rising sign calculations,
+ * plus deterministic formulas for other modalities.
  * The quick_ai_search tool is a web search (not creative generation), so we use
  * it sparingly for current cosmic weather and rely on high-quality crafted content.
  */
@@ -8,6 +9,13 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import { v } from "convex/values";
 import { action, internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
+import {
+  getAccurateSunSign,
+  getAccurateMoonSign,
+  getAscendant,
+  geocodeCity,
+  estimateUtcOffset,
+} from "./astroCalc";
 
 // Viktor Tools API reserved for future AI enhancements
 // const VIKTOR_API_URL = process.env.VIKTOR_SPACES_API_URL!;
@@ -34,32 +42,55 @@ const ELEMENTS: Record<string, string> = {
   Sagittarius: "Fire", Capricorn: "Earth", Aquarius: "Air", Pisces: "Water",
 };
 
-function computeCosmicProfile(birthDate: string, birthTime: string | undefined, _birthCity: string): CosmicProfile {
+function computeCosmicProfile(
+  birthDate: string,
+  birthTime: string | undefined,
+  _birthCity: string,
+  birthLat?: number,
+  birthLng?: number,
+): CosmicProfile {
   const date = new Date(birthDate);
   const month = date.getUTCMonth() + 1;
   const day = date.getUTCDate();
   const year = date.getUTCFullYear();
 
-  // ─── Sun Sign ───
-  const sunBounds = [[20,19],[19,18],[21,20],[20,20],[21,21],[22,22],[23,22],[23,21],[23,22],[23,21],[22,21],[22,19]];
-  let sunIdx = (month - 1);
-  if (day < sunBounds[month - 1][0]) sunIdx = (month - 2 + 12) % 12;
-  // Maps month index to the zodiac sign that STARTS in that month
-  // Jan→Aquarius(10), Feb→Pisces(11), Mar→Aries(0), Apr→Taurus(1), …
-  const signOrder = [10,11,0,1,2,3,4,5,6,7,8,9];
-  const sunSign = SIGNS[signOrder[sunIdx]];
+  // Parse birth time (local) — default to noon if unknown
+  let localHour = 12;
+  let localMinute = 0;
+  if (birthTime) {
+    const parts = birthTime.split(":");
+    localHour = Number.parseInt(parts[0], 10);
+    localMinute = Number.parseInt(parts[1] || "0", 10);
+  }
+
+  // Estimate UTC offset from longitude (solar time) and convert local → UTC
+  const utcOffset = birthLng != null ? estimateUtcOffset(birthLng) : 0;
+  let utcHour = localHour - utcOffset;
+  let utcDay = day;
+  let utcMonth = month;
+  let utcYear = year;
+  if (utcHour < 0) { utcHour += 24; utcDay -= 1; }
+  if (utcHour >= 24) { utcHour -= 24; utcDay += 1; }
+  // Simplified day rollover — handles most cases correctly
+  if (utcDay < 1) { utcMonth -= 1; if (utcMonth < 1) { utcMonth = 12; utcYear -= 1; } utcDay = new Date(utcYear, utcMonth, 0).getDate(); }
+  if (utcDay > new Date(utcYear, utcMonth, 0).getDate()) { utcDay = 1; utcMonth += 1; if (utcMonth > 12) { utcMonth = 1; utcYear += 1; } }
+
+  // ─── Sun Sign (astronomy-engine: actual ecliptic longitude) ───
+  const sunSign = getAccurateSunSign(utcYear, utcMonth, utcDay, utcHour, localMinute);
   const sunElement = ELEMENTS[sunSign];
 
-  // ─── Moon Sign (simplified — day + month cycle through signs) ───
-  const moonIdx = (day * 13 + month * 7 + year) % 12;
-  const moonSign = SIGNS[moonIdx];
+  // ─── Moon Sign (astronomy-engine: actual lunar ecliptic longitude) ───
+  const moonSign = getAccurateMoonSign(utcYear, utcMonth, utcDay, utcHour, localMinute);
   const moonElement = ELEMENTS[moonSign];
 
-  // ─── Rising Sign (uses birth time if available) ───
-  const risingIdx = birthTime
-    ? (Math.floor(Number.parseInt(birthTime.split(":")[0]) / 2) + signOrder[month - 1]) % 12
-    : (day + month * 3) % 12;
-  const risingSign = SIGNS[risingIdx];
+  // ─── Rising Sign (astronomy-engine: actual ascendant from sidereal time + lat/lng) ───
+  let risingSign: string;
+  if (birthLat != null && birthLng != null && birthTime) {
+    risingSign = getAscendant(utcYear, utcMonth, utcDay, utcHour, localMinute, birthLat, birthLng);
+  } else {
+    // Fallback: use Moon's sign when birth time/location unavailable
+    risingSign = moonSign;
+  }
 
   // ─── Human Design ───
   const hdHash = (day * 31 + month * 13 + year * 7) % 100;
@@ -356,7 +387,15 @@ export const generateCosmicFingerprint = action({
     const profile: any = await ctx.runQuery(internal.profiles.getUserProfileInternal, { userId });
     if (!profile) throw new Error("No profile found. Complete onboarding first.");
 
-    const c = computeCosmicProfile(profile.birthDate, profile.birthTime, profile.birthCity);
+    // Resolve lat/lng: use stored values, or geocode from city/country
+    let lat = profile.birthLat as number | undefined;
+    let lng = profile.birthLng as number | undefined;
+    if (lat == null || lng == null) {
+      const geo = await geocodeCity(profile.birthCity, profile.birthCountry);
+      if (geo) { lat = geo.lat; lng = geo.lng; }
+    }
+
+    const c = computeCosmicProfile(profile.birthDate, profile.birthTime, profile.birthCity, lat, lng);
     const summary = generateFingerprintSummary(profile.displayName, c);
 
     await ctx.runMutation(internal.pearl.saveCosmicProfile, {
@@ -382,7 +421,14 @@ export const generateLifePurposeReading = action({
     const profile: any = await ctx.runQuery(internal.profiles.getUserProfileInternal, { userId });
     if (!profile) throw new Error("No profile found");
 
-    const c = computeCosmicProfile(profile.birthDate, profile.birthTime, profile.birthCity);
+    let lat = profile.birthLat as number | undefined;
+    let lng = profile.birthLng as number | undefined;
+    if (lat == null || lng == null) {
+      const geo = await geocodeCity(profile.birthCity, profile.birthCountry);
+      if (geo) { lat = geo.lat; lng = geo.lng; }
+    }
+
+    const c = computeCosmicProfile(profile.birthDate, profile.birthTime, profile.birthCity, lat, lng);
     const content = generateLifePurposeText(profile.displayName, c);
     const today = new Date().toISOString().split("T")[0];
 
@@ -403,7 +449,14 @@ export const generateDailyBrief = action({
     const profile: any = await ctx.runQuery(internal.profiles.getUserProfileInternal, { userId });
     if (!profile) throw new Error("No profile found");
 
-    const c = computeCosmicProfile(profile.birthDate, profile.birthTime, profile.birthCity);
+    let lat = profile.birthLat as number | undefined;
+    let lng = profile.birthLng as number | undefined;
+    if (lat == null || lng == null) {
+      const geo = await geocodeCity(profile.birthCity, profile.birthCountry);
+      if (geo) { lat = geo.lat; lng = geo.lng; }
+    }
+
+    const c = computeCosmicProfile(profile.birthDate, profile.birthTime, profile.birthCity, lat, lng);
     const today = new Date();
     const dayOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][today.getDay()];
     const dateStr = today.toISOString().split("T")[0];
@@ -430,7 +483,14 @@ export const askOracle = action({
     const profile: any = await ctx.runQuery(internal.profiles.getUserProfileInternal, { userId });
     if (!profile) throw new Error("No profile found");
 
-    const c = computeCosmicProfile(profile.birthDate, profile.birthTime, profile.birthCity);
+    let lat = profile.birthLat as number | undefined;
+    let lng = profile.birthLng as number | undefined;
+    if (lat == null || lng == null) {
+      const geo = await geocodeCity(profile.birthCity, profile.birthCountry);
+      if (geo) { lat = geo.lat; lng = geo.lng; }
+    }
+
+    const c = computeCosmicProfile(profile.birthDate, profile.birthTime, profile.birthCity, lat, lng);
 
     // Get recent messages for context
     const messages: any[] = await ctx.runQuery(internal.oracle.getMessagesInternal, { conversationId });
