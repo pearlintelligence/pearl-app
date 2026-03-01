@@ -10,6 +10,7 @@ import { Toaster } from "./components/ui/sonner";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import {
   BlueprintPage,
+  ChangelogPage,
   DashboardPage,
   LandingPage,
   LifePurposePage,
@@ -51,6 +52,7 @@ function App() {
           {/* Main app routes — protected with sidebar */}
           <Route element={<ProtectedRoute />}>
             <Route element={<AppLayout />}>
+              <Route path="/changelog" element={<ChangelogPage />} />
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/blueprint" element={<BlueprintPage />} />
               <Route path="/purpose" element={<LifePurposePage />} />

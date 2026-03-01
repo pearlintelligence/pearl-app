@@ -1,4 +1,5 @@
 export { BlueprintPage } from "./BlueprintPage";
+export { default as ChangelogPage } from "./ChangelogPage";
 export { DashboardPage } from "./DashboardPage";
 export { LandingPage } from "./LandingPage";
 export { LifePurposePage } from "./LifePurposePage";

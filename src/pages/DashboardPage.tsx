@@ -3,7 +3,7 @@ import { useAction, useQuery } from "convex/react";
 import { MessageCircle, Sparkles, Sun, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { WhatsNew } from "@/components/WhatsNew";
+import { WhatsNewButton } from "@/components/WhatsNewButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { api } from "../../convex/_generated/api";
@@ -120,14 +120,14 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
-      {/* What's New */}
-      <WhatsNew />
-
       {/* Header */}
       <div className="text-center md:text-left">
-        <p className="text-sm text-pearl-gold tracking-[0.15em] uppercase font-body mb-1">
-          Welcome back
-        </p>
+        <div className="flex items-center justify-between mb-1">
+          <p className="text-sm text-pearl-gold tracking-[0.15em] uppercase font-body">
+            Welcome back
+          </p>
+          <WhatsNewButton />
+        </div>
         <h1 className="text-2xl md:text-3xl font-heading text-pearl-warm">
           {displayName}'s Cosmic Dashboard
         </h1>
