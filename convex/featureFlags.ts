@@ -1,10 +1,11 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { v } from "convex/values";
+import type { QueryCtx, MutationCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
 
 const ADMIN_DOMAIN = "innerpearl.ai";
 
-async function requireAdmin(ctx: any): Promise<any> {
+async function requireAdmin(ctx: QueryCtx | MutationCtx) {
   const userId = await getAuthUserId(ctx);
   if (!userId) throw new Error("Not authenticated");
 
@@ -83,7 +84,7 @@ export const update = mutation({
     const flag = await ctx.db.get(id);
     if (!flag) throw new Error("Flag not found");
 
-    const cleanUpdates: Record<string, any> = { updatedAt: Date.now() };
+    const cleanUpdates: Record<string, string | boolean | number> = { updatedAt: Date.now() };
     if (updates.name !== undefined) cleanUpdates.name = updates.name;
     if (updates.description !== undefined) cleanUpdates.description = updates.description;
     if (updates.enabled !== undefined) cleanUpdates.enabled = updates.enabled;

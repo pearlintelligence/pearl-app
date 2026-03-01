@@ -1,0 +1,52 @@
+# Recommended CI workflow with dependency audit step
+# Replace .github/workflows/ci.yml with this file
+#
+# NOTE: GitHub App tokens cannot push workflow files, so this is saved
+# separately. Copy it manually or via a PAT-based workflow.
+
+name: 🧪 CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Lint, Typecheck & Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: |
+          rm -f node_modules
+          bun install
+
+      - name: Lint (Biome)
+        run: bun run lint
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: Dependency audit
+        run: bunx audit
+        continue-on-error: true
+
+      - name: Build
+        run: bun run build
+        env:
+          VITE_CONVEX_URL: ${{ secrets.VITE_CONVEX_URL }}

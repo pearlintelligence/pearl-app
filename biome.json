@@ -36,11 +36,12 @@
         "noRedundantRoles": "off"
       },
       "suspicious": {
-        "noExplicitAny": "off",
-        "noArrayIndexKey": "off"
+        "noExplicitAny": "warn",
+        "noArrayIndexKey": "off",
+        "noConsole": "warn"
       },
       "security": {
-        "noDangerouslySetInnerHtml": "off"
+        "noDangerouslySetInnerHtml": "warn"
       }
     }
   },
