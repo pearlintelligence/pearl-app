@@ -1,8 +1,12 @@
+export { BlueprintPage } from "./BlueprintPage";
 export { DashboardPage } from "./DashboardPage";
 export { LandingPage } from "./LandingPage";
+export { LifePurposePage } from "./LifePurposePage";
 export { LoginPage } from "./LoginPage";
 export { OnboardingPage } from "./OnboardingPage";
 export { OraclePage } from "./OraclePage";
+export { ProgressionsPage } from "./ProgressionsPage";
 export { ReadingPage } from "./ReadingPage";
 export { SettingsPage } from "./SettingsPage";
 export { SignupPage } from "./SignupPage";
+export { TransitsPage } from "./TransitsPage";

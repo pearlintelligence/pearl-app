@@ -1,15 +1,19 @@
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useQuery } from "convex/react";
 import {
+  Activity,
   BarChart3,
+  Compass,
   CreditCard,
   Flag,
   LayoutDashboard,
   LogOut,
   MessageCircle,
+  Orbit,
   ScrollText,
   Settings,
   Shield,
+  Sparkles,
   Users,
   Wrench,
 } from "lucide-react";
@@ -39,8 +43,12 @@ import {
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/blueprint", label: "Your Blueprint", icon: Orbit },
+  { href: "/purpose", label: "Your Life Purpose", icon: Compass },
+  { href: "/transits", label: "What's Happening Now", icon: Activity },
+  { href: "/progressions", label: "Your Life Phase", icon: Sparkles },
   { href: "/oracle", label: "Ask Pearl", icon: MessageCircle },
-  { href: "/reading", label: "Life Purpose", icon: ScrollText },
+  { href: "/reading", label: "First Reading", icon: ScrollText },
 ];
 
 const adminNavItems = [

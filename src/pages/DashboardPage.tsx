@@ -131,7 +131,7 @@ export function DashboardPage() {
       {/* Daily Brief */}
       <DailyBriefCard />
 
-      {/* Five-System Cosmic Fingerprint */}
+      {/* Four-System Cosmic Fingerprint */}
       {cosmic && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -140,7 +140,7 @@ export function DashboardPage() {
                 Your Cosmic Fingerprint
               </h2>
               <p className="text-xs text-pearl-muted font-body mt-0.5">
-                Five ancient systems, one unified design
+                Four ancient systems, one unified design
               </p>
             </div>
           </div>
@@ -164,16 +164,6 @@ export function DashboardPage() {
                 { label: "Type", value: cosmic.hdType },
                 { label: "Authority", value: cosmic.hdAuthority },
                 { label: "Profile", value: cosmic.hdProfile },
-              ]}
-            />
-            <CosmicSystemCard
-              icon="❋"
-              system="Gene Keys"
-              color="text-chart-3"
-              values={[
-                { label: "Life Purpose", value: cosmic.lifePurpose },
-                { label: "Evolution", value: cosmic.evolution },
-                { label: "Radiance", value: cosmic.radiance },
               ]}
             />
             <CosmicSystemCard

@@ -51,7 +51,7 @@ export function LandingPage() {
           </h1>
 
           <p className="text-base md:text-lg text-pearl-muted max-w-lg mx-auto leading-relaxed font-body">
-            Inner Pearl synthesizes astrology, Human Design, Gene Keys, Kabbalah, and
+            Inner Pearl synthesizes astrology, Human Design, Kabbalah, and
             Numerology into one unified map of your soul. Not a horoscope.{" "}
             <span className="text-pearl-warm">A revelation.</span>
           </p>
@@ -118,7 +118,6 @@ export function LandingPage() {
             {[
               { name: "Astrology", icon: "✦", desc: "Celestial blueprint" },
               { name: "Human Design", icon: "◇", desc: "Energy architecture" },
-              { name: "Gene Keys", icon: "❋", desc: "Evolutionary path" },
               { name: "Kabbalah", icon: "✡", desc: "Soul's tree of life" },
               { name: "Numerology", icon: "∞", desc: "Vibrational code" },
             ].map((system) => (

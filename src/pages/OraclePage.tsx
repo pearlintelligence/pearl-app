@@ -194,7 +194,7 @@ export function OraclePage() {
               </h2>
               <p className="text-pearl-muted font-body text-sm max-w-md">
                 Pearl sees through the lens of your cosmic design — astrology,
-                Human Design, Gene Keys, Kabbalah, and Numerology. Ask about
+                Human Design, Kabbalah, and Numerology. Ask about
                 decisions, relationships, purpose, or patterns.
               </p>
               {speech.isSupported && (

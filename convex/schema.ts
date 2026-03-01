@@ -20,10 +20,11 @@ const schema = defineSchema({
     createdAt: v.number(),
   }).index("by_userId", ["userId"]),
 
-  // Cosmic fingerprint — unified five-system profile
+  // Cosmic fingerprint — unified four-system profile
+  // (Astrology + Human Design + Kabbalah + Numerology)
   cosmicProfiles: defineTable({
     userId: v.id("users"),
-    // Astrology
+    // Astrology (real Swiss Ephemeris calculations)
     sunSign: v.string(),
     moonSign: v.string(),
     risingSign: v.string(),
@@ -31,7 +32,7 @@ const schema = defineSchema({
     hdType: v.string(),
     hdAuthority: v.string(),
     hdProfile: v.string(),
-    // Gene Keys
+    // Life Purpose (replaced Gene Keys — Pearl's own interpretation)
     lifePurpose: v.string(),
     evolution: v.string(),
     radiance: v.string(),
@@ -45,6 +46,45 @@ const schema = defineSchema({
     // Summary
     summary: v.string(),
     generatedAt: v.number(),
+  }).index("by_userId", ["userId"]),
+
+  // Full natal chart — real Swiss Ephemeris calculations
+  natalCharts: defineTable({
+    userId: v.id("users"),
+    // Key fields for quick queries
+    sunSign: v.string(),
+    sunHouse: v.number(),
+    moonSign: v.string(),
+    moonHouse: v.number(),
+    ascendantSign: v.string(),
+    midheavenSign: v.string(),
+    northNodeSign: v.string(),
+    northNodeHouse: v.number(),
+    saturnSign: v.string(),
+    saturnHouse: v.number(),
+    houseSystem: v.string(),
+    // Full chart data (all planets, houses, degrees)
+    fullChartJson: v.string(),
+    createdAt: v.number(),
+  }).index("by_userId", ["userId"]),
+
+  // Life Purpose Engine — core feature, generated from natal chart
+  lifePurposeProfiles: defineTable({
+    userId: v.id("users"),
+    purposeDirection: v.string(),
+    careerAlignment: v.string(),
+    leadershipStyle: v.string(),
+    fulfillmentDrivers: v.string(),
+    longTermPath: v.string(),
+    // Source natal data used
+    northNodeSign: v.string(),
+    northNodeHouse: v.number(),
+    midheavenSign: v.string(),
+    sunSign: v.string(),
+    sunHouse: v.number(),
+    saturnSign: v.string(),
+    saturnHouse: v.number(),
+    createdAt: v.number(),
   }).index("by_userId", ["userId"]),
 
   // Readings (Why Am I Here, Daily Brief, etc.)

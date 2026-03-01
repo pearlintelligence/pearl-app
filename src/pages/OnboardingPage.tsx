@@ -47,7 +47,7 @@ function GeneratingAnimation({ name: _name }: { name: string }) {
   const messages = [
     "Reading the celestial configurations at your moment of birth",
     "Mapping your Human Design energy type",
-    "Decoding your Gene Keys activation sequence",
+    "Synthesizing your Life Purpose Engine",
     "Tracing your path through the Tree of Life",
     "Computing your numerological signature",
   ];

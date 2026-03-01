@@ -8,14 +8,18 @@ import { PublicOnlyRoute } from "./components/PublicOnlyRoute";
 import { Toaster } from "./components/ui/sonner";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import {
+  BlueprintPage,
   DashboardPage,
   LandingPage,
+  LifePurposePage,
   LoginPage,
   OnboardingPage,
   OraclePage,
+  ProgressionsPage,
   ReadingPage,
   SettingsPage,
   SignupPage,
+  TransitsPage,
 } from "./pages";
 import {
   AdminDashboardPage,
@@ -47,6 +51,10 @@ function App() {
           <Route element={<ProtectedRoute />}>
             <Route element={<AppLayout />}>
               <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/blueprint" element={<BlueprintPage />} />
+              <Route path="/purpose" element={<LifePurposePage />} />
+              <Route path="/transits" element={<TransitsPage />} />
+              <Route path="/progressions" element={<ProgressionsPage />} />
               <Route path="/oracle" element={<OraclePage />} />
               <Route path="/reading" element={<ReadingPage />} />
               <Route path="/settings" element={<SettingsPage />} />

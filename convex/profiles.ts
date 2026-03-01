@@ -74,6 +74,32 @@ export const saveOnboarding = mutation({
   },
 });
 
+// ── Natal Chart ──
+export const getNatalChart = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return null;
+    return await ctx.db
+      .query("natalCharts")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .first();
+  },
+});
+
+// ── Life Purpose Profile ──
+export const getLifePurpose = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return null;
+    return await ctx.db
+      .query("lifePurposeProfiles")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .first();
+  },
+});
+
 export const isOnboardingComplete = query({
   args: {},
   handler: async (ctx) => {
