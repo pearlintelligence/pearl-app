@@ -1,16 +1,60 @@
 import { useAction, useQuery } from "convex/react";
 import { ArrowRight, Sparkles } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { api } from "../../convex/_generated/api";
+
+/**
+ * Split reading content into progressive sections by wisdom system.
+ * Each section is separated by double newlines in the generated text.
+ * Groups:
+ *   1. Name + Intro (before the stars...)
+ *   2. Human Design (life force / guide / initiator / mirror)
+ *   3. Astrology (Sun, Moon, Rising + North Node + Saturn)
+ *   4. Kabbalah (Tree of Life + soul urge)
+ *   5. Numerology + Closing (Life Path + "Are you ready to live it?")
+ */
+function splitIntoSections(content: string): string[][] {
+  const paragraphs = content.split(/\n\n+/).filter((p) => p.trim());
+  if (paragraphs.length <= 5) {
+    return paragraphs.map((p) => [p]);
+  }
+
+  // Group paragraphs into 5 sections based on content structure
+  const sections: string[][] = [];
+  sections.push(paragraphs.slice(0, 2));        // Name + Intro
+  sections.push(paragraphs.slice(2, 3));         // Human Design
+  sections.push(paragraphs.slice(3, 6));         // Astrology (3 paragraphs)
+  sections.push(paragraphs.slice(6, 7));         // Kabbalah
+  sections.push(paragraphs.slice(7));            // Numerology + Closing
+
+  return sections.filter((s) => s.length > 0);
+}
+
+/** Detect the whisper line */
+function isWhisperLine(text: string): boolean {
+  return text.trim() === "Are you ready to live it?";
+}
+
+/** Render a paragraph, applying italic whisper style to the key line */
+function ReadingParagraph({ text }: { text: string }) {
+  if (isWhisperLine(text)) {
+    return (
+      <p className="oracle-whisper text-lg md:text-xl text-pearl-gold/90 text-center my-8">
+        {text}
+      </p>
+    );
+  }
+  return <p className="mb-8">{text}</p>;
+}
 
 export function ReadingPage() {
   const reading = useQuery(api.readings.getLatestReading, { type: "life_purpose" });
   const generateReading = useAction(api.pearl.generateLifePurposeReading);
   const [generating, setGenerating] = useState(false);
-  const [displayText, setDisplayText] = useState("");
-  const [isRevealing, setIsRevealing] = useState(false);
+  const [revealedSections, setRevealedSections] = useState<Set<number>>(new Set());
+  const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   // Auto-generate reading if none exists
   useEffect(() => {
@@ -22,24 +66,40 @@ export function ReadingPage() {
     }
   }, [reading, generating, generateReading]);
 
-  // Typewriter reveal effect
-  useEffect(() => {
-    if (reading?.content && !isRevealing && displayText === "") {
-      setIsRevealing(true);
-      const text = reading.content;
-      let i = 0;
-      const interval = setInterval(() => {
-        if (i < text.length) {
-          setDisplayText(text.slice(0, i + 1));
-          i++;
-        } else {
-          clearInterval(interval);
-          setIsRevealing(false);
+  // Intersection Observer for progressive reveal
+  const observerCallback = useCallback((entries: IntersectionObserverEntry[]) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        const index = Number(entry.target.getAttribute("data-section-index"));
+        if (!isNaN(index)) {
+          setRevealedSections((prev) => new Set([...prev, index]));
         }
-      }, 15);
-      return () => clearInterval(interval);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(observerCallback, {
+      threshold: 0.15,
+      rootMargin: "0px 0px -40px 0px",
+    });
+
+    sectionRefs.current.forEach((ref) => {
+      if (ref) observer.observe(ref);
+    });
+
+    return () => observer.disconnect();
+  }, [reading?.content, observerCallback]);
+
+  // Reveal first section immediately after a brief pause
+  useEffect(() => {
+    if (reading?.content) {
+      const timer = setTimeout(() => {
+        setRevealedSections(new Set([0]));
+      }, 300);
+      return () => clearTimeout(timer);
     }
-  }, [reading?.content, isRevealing, displayText]);
+  }, [reading?.content]);
 
   if (!reading && !generating) {
     return (
@@ -81,6 +141,8 @@ export function ReadingPage() {
     );
   }
 
+  const sections = splitIntoSections(reading.content);
+
   return (
     <div className="min-h-screen flex flex-col star-field relative">
       {/* Ambient glow */}
@@ -88,10 +150,10 @@ export function ReadingPage() {
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full bg-pearl-gold/3 blur-[150px]" />
       </div>
 
-      <div className="flex-1 flex flex-col items-center justify-center px-4 py-16 md:py-24">
-        <div className="max-w-2xl w-full mx-auto">
+      <div className="flex-1 flex flex-col items-center px-6 py-16 md:py-24">
+        <div className="w-full max-w-[640px] mx-auto">
           {/* Header */}
-          <div className="text-center mb-10">
+          <div className="text-center mb-16">
             <p className="text-sm text-pearl-gold tracking-[0.2em] uppercase font-body mb-3">
               ✦ Your First Reading ✦
             </p>
@@ -105,19 +167,38 @@ export function ReadingPage() {
             </div>
           </div>
 
-          {/* Reading content */}
-          <div className="sacred-border rounded-2xl p-6 md:p-10 pearl-glow">
-            <div className="oracle-voice text-base md:text-lg text-pearl-warm/90 whitespace-pre-line leading-relaxed">
-              {displayText || reading.content}
-              {isRevealing && (
-                <span className="inline-block w-0.5 h-5 bg-pearl-gold/60 ml-0.5 animate-pulse" />
-              )}
-            </div>
+          {/* Reading content — no card, words float on darkness */}
+          <div className="oracle-voice text-base md:text-lg text-pearl-warm/90 leading-relaxed">
+            {sections.map((paragraphs, sectionIdx) => (
+              <div key={sectionIdx}>
+                <div
+                  ref={(el) => { sectionRefs.current[sectionIdx] = el; }}
+                  data-section-index={sectionIdx}
+                  className={`reading-section${revealedSections.has(sectionIdx) ? " revealed" : ""}`}
+                >
+                  {paragraphs.map((paragraph, pIdx) => (
+                    <ReadingParagraph key={pIdx} text={paragraph} />
+                  ))}
+                </div>
+
+                {/* Thin centered rule between sections + scroll prompt */}
+                {sectionIdx < sections.length - 1 && (
+                  <div className={`my-12 flex flex-col items-center gap-3 reading-section${revealedSections.has(sectionIdx) ? " revealed" : ""}`}>
+                    <div className="sacred-rule" />
+                    {!revealedSections.has(sectionIdx + 1) && (
+                      <p className="text-xs text-pearl-muted/50 font-body tracking-widest uppercase animate-pulse">
+                        ↓
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
 
-          {/* CTA */}
-          {!isRevealing && (
-            <div className="text-center mt-10 space-y-4 animate-in fade-in duration-1000">
+          {/* CTA — only after all sections revealed */}
+          {revealedSections.size >= sections.length && (
+            <div className="text-center mt-16 space-y-4 animate-in fade-in duration-1000">
               <Button
                 className="bg-pearl-gold hover:bg-pearl-gold-light text-pearl-void rounded-full px-8 h-12 font-body"
                 asChild

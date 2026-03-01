@@ -153,7 +153,7 @@ function generateLifePurposeText(name: string, chart: NatalChart, sys: Simplifie
     ? "The air in your chart speaks of a mind that bridges worlds. You are here to translate — between people, between ideas, between what is known and what is waiting to be understood."
     : "The water in your design runs deep — deeper than you sometimes realize. You are here to feel what others cannot, to hold space for the emotional truths that the world needs most.";
 
-  return `Beloved ${name},
+  return `${name}.
 
 Before the stars arranged themselves into the configuration of your birth, something in the fabric of existence chose this precise design for you. Not by accident. Not by chance. By a wisdom far older than any single lifetime.
 
