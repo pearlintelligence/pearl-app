@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/react";
 import { useAction, useQuery } from "convex/react";
 import { Compass, Briefcase, Crown, Heart, Mountain, RefreshCw } from "lucide-react";
 import { useState } from "react";
@@ -76,7 +77,7 @@ export function LifePurposePage() {
             <Button
               onClick={async () => {
                 setGenerating(true);
-                try { await generateFingerprint(); } catch (e) { console.error(e); }
+                try { await generateFingerprint(); } catch (e) { Sentry.captureException(e); }
                 setGenerating(false);
               }}
               className="bg-pearl-gold/20 hover:bg-pearl-gold/30 text-pearl-gold border border-pearl-gold/30 font-body rounded-full px-6"

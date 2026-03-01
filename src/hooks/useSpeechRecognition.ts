@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 interface UseSpeechRecognitionOptions {
@@ -114,7 +115,7 @@ export function useSpeechRecognition({
     };
 
     recognition.onerror = (event: { error: string }) => {
-      console.error("Speech recognition error:", event.error);
+      Sentry.addBreadcrumb({ category: "speech", message: `Speech recognition error: ${event.error}`, level: "error" });
       if (event.error !== "aborted") {
         setIsListening(false);
       }

@@ -45,7 +45,7 @@ export function initSentry() {
     release: `pearl-app@${import.meta.env.VITE_VERCEL_GIT_COMMIT_SHA ?? "dev"}`,
   });
 
-  console.log("✦ Sentry initialized —", import.meta.env.MODE);
+  if (import.meta.env.DEV) console.log("✦ Sentry initialized —", import.meta.env.MODE);
 }
 
 /**

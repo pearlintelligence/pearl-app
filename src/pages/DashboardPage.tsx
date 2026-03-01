@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/react";
 import { useAction, useQuery } from "convex/react";
 import { MessageCircle, Sparkles, Sun, RefreshCw } from "lucide-react";
 import { useState } from "react";
@@ -57,7 +58,7 @@ function DailyBriefCard() {
     try {
       await generateBrief();
     } catch (e) {
-      console.error(e);
+      Sentry.captureException(e);
     }
     setGenerating(false);
   };
