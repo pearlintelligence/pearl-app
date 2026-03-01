@@ -1,3 +1,8 @@
+import { initSentry } from "./lib/sentry";
+
+// Initialize Sentry BEFORE anything else renders
+initSentry();
+
 import { ConvexAuthProvider } from "@convex-dev/auth/react";
 import { ConvexReactClient } from "convex/react";
 import { StrictMode } from "react";
