@@ -27,8 +27,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          mkdir -p node_modules
-          bun install
+          mkdir -p node_modules
+          bun install
 
       - name: Lint (Biome)
         run: bun run lint
