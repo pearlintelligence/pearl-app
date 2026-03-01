@@ -7,7 +7,7 @@
  */
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { v } from "convex/values";
-import { action, internalMutation } from "./_generated/server";
+import { action, internalAction, internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 import {
   getAccurateSunSign,
@@ -506,5 +506,69 @@ export const askOracle = action({
     });
 
     return answer;
+  },
+});
+
+// ────────────────────────────────────────────────────────────────
+// Batch migration — regenerate ALL cosmic profiles with accurate calcs
+// ────────────────────────────────────────────────────────────────
+
+/**
+ * Internal action to regenerate cosmic profiles for ALL existing users.
+ * Run from the Convex dashboard after deploying the astronomy-engine update.
+ *
+ * For each user profile:
+ *  1. Geocodes birth city → lat/lng (if not already stored)
+ *  2. Recomputes Sun, Moon, Rising using real astronomical calculations
+ *  3. Patches (upserts) the cosmicProfile record
+ *
+ * Safe to run multiple times — saveCosmicProfile patches existing records.
+ */
+export const migrateAllCosmicProfiles = internalAction({
+  args: {},
+  handler: async (ctx): Promise<string> => {
+    // Fetch all user profiles
+    const allProfiles: any[] = await ctx.runQuery(
+      internal.profiles.getAllUserProfilesInternal,
+    );
+
+    let updated = 0;
+    let skipped = 0;
+    const errors: string[] = [];
+
+    for (const profile of allProfiles) {
+      try {
+        // Resolve lat/lng
+        let lat = profile.birthLat as number | undefined;
+        let lng = profile.birthLng as number | undefined;
+        if (lat == null || lng == null) {
+          const geo = await geocodeCity(profile.birthCity, profile.birthCountry);
+          if (geo) { lat = geo.lat; lng = geo.lng; }
+        }
+
+        const c = computeCosmicProfile(
+          profile.birthDate, profile.birthTime, profile.birthCity, lat, lng,
+        );
+        const summary = generateFingerprintSummary(profile.displayName, c);
+
+        await ctx.runMutation(internal.pearl.saveCosmicProfile, {
+          userId: profile.userId,
+          sunSign: c.sunSign, moonSign: c.moonSign, risingSign: c.risingSign,
+          hdType: c.hdType, hdAuthority: c.hdAuthority, hdProfile: c.hdProfile,
+          lifePurpose: c.gkLifePurpose, evolution: c.gkEvolution, radiance: c.gkRadiance,
+          lifePathTree: c.kbSephirah, soulUrge: c.kbSoulUrge,
+          lifePathNumber: c.lifePathNumber, expressionNumber: c.expressionNumber, soulNumber: c.soulNumber,
+          summary,
+        });
+        updated++;
+      } catch (e: any) {
+        errors.push(`User ${profile.userId}: ${e.message}`);
+        skipped++;
+      }
+    }
+
+    const result = `Migration complete: ${updated} profiles updated, ${skipped} skipped.${errors.length > 0 ? "\nErrors:\n" + errors.join("\n") : ""}`;
+    console.log(result);
+    return result;
   },
 });

@@ -12,6 +12,13 @@ export const getUserProfileInternal = internalQuery({
   },
 });
 
+export const getAllUserProfilesInternal = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db.query("userProfiles").collect();
+  },
+});
+
 export const getUserProfile = query({
   args: {},
   handler: async (ctx) => {
