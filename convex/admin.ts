@@ -1,11 +1,14 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { v } from "convex/values";
+import type { QueryCtx, MutationCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
 
 const ADMIN_DOMAIN = "innerpearl.ai";
 
 /** Check if the current user is an admin (has @innerpearl.ai email) */
-async function requireAdmin(ctx: any): Promise<{ userId: any; email: string }> {
+async function requireAdmin(
+  ctx: QueryCtx | MutationCtx,
+): Promise<{ userId: ReturnType<typeof getAuthUserId> extends Promise<infer T> ? NonNullable<T> : never; email: string }> {
   const userId = await getAuthUserId(ctx);
   if (!userId) throw new Error("Not authenticated");
 
@@ -34,11 +37,16 @@ export const isAdmin = query({
 });
 
 /** Get dashboard stats */
+// TODO: These queries load ALL records from ALL tables using .collect().
+// This works fine for small datasets but will become a performance bottleneck
+// as the app scales. Migrate to paginated queries or aggregation tables when
+// user/reading counts exceed ~10k records.
 export const getDashboardStats = query({
   args: {},
   handler: async (ctx) => {
     await requireAdmin(ctx);
 
+    // TODO: Replace .collect() with paginated queries or pre-computed aggregates
     const users = await ctx.db.query("users").collect();
     const profiles = await ctx.db.query("userProfiles").collect();
     const readings = await ctx.db.query("readings").collect();
@@ -94,11 +102,14 @@ export const getDashboardStats = query({
 });
 
 /** List all users with their profiles */
+// TODO: This loads ALL users and related data into memory. Add server-side
+// pagination (e.g. cursor-based) before user count exceeds ~10k.
 export const listUsers = query({
   args: {},
   handler: async (ctx) => {
     await requireAdmin(ctx);
 
+    // TODO: Replace .collect() with paginated queries
     const users = await ctx.db.query("users").collect();
     const profiles = await ctx.db.query("userProfiles").collect();
     const cosmicProfiles = await ctx.db.query("cosmicProfiles").collect();
@@ -201,11 +212,15 @@ export const deleteUser = mutation({
 });
 
 /** Get analytics data for charts */
+// TODO: This loads ALL users, readings, and conversations into memory.
+// Consider pre-computing daily aggregates via a cron job or using
+// indexed time-range queries as the dataset grows.
 export const getAnalytics = query({
   args: {},
   handler: async (ctx) => {
     await requireAdmin(ctx);
 
+    // TODO: Replace .collect() with time-range indexed queries or aggregation tables
     const users = await ctx.db.query("users").collect();
     const readings = await ctx.db.query("readings").collect();
     const conversations = await ctx.db.query("conversations").collect();
