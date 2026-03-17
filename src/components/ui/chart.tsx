@@ -100,6 +100,23 @@ ${colorConfig
   );
 };
 
+// Recharts v3 compatible payload types for tooltip and legend content
+interface TooltipPayloadEntry {
+  type?: string;
+  color?: string;
+  dataKey?: string | number;
+  name?: string;
+  value?: string | number;
+  payload: Record<string, string>;
+}
+
+interface LegendPayloadEntry {
+  type?: string;
+  color?: string;
+  dataKey?: string | number;
+  value?: string;
+}
+
 const ChartTooltip = RechartsPrimitive.Tooltip;
 
 function ChartTooltipContent({
@@ -116,8 +133,23 @@ function ChartTooltipContent({
   color,
   nameKey,
   labelKey,
-}: React.ComponentProps<typeof RechartsPrimitive.Tooltip> &
-  React.ComponentProps<"div"> & {
+}: React.ComponentProps<"div"> & {
+    active?: boolean;
+    payload?: TooltipPayloadEntry[];
+    label?: string;
+    labelFormatter?: (
+      value: React.ReactNode,
+      payload: TooltipPayloadEntry[],
+    ) => React.ReactNode;
+    labelClassName?: string;
+    formatter?: (
+      value: string | number,
+      name: string,
+      item: TooltipPayloadEntry,
+      index: number,
+      payload: Record<string, string>,
+    ) => React.ReactNode;
+    color?: string;
     hideLabel?: boolean;
     hideIndicator?: boolean;
     indicator?: "line" | "dot" | "dashed";
@@ -178,8 +210,8 @@ function ChartTooltipContent({
       {!nestLabel ? tooltipLabel : null}
       <div className="grid gap-1.5">
         {payload
-          .filter(item => item.type !== "none")
-          .map((item, index) => {
+          .filter((item: TooltipPayloadEntry) => item.type !== "none")
+          .map((item: TooltipPayloadEntry, index: number) => {
             const key = `${nameKey || item.name || item.dataKey || "value"}`;
             const itemConfig = getPayloadConfigFromPayload(config, item, key);
             const indicatorColor = color || item.payload.fill || item.color;
@@ -256,8 +288,9 @@ function ChartLegendContent({
   payload,
   verticalAlign = "bottom",
   nameKey,
-}: React.ComponentProps<"div"> &
-  Pick<RechartsPrimitive.LegendProps, "payload" | "verticalAlign"> & {
+}: React.ComponentProps<"div"> & {
+    payload?: LegendPayloadEntry[];
+    verticalAlign?: "top" | "bottom" | "middle";
     hideIcon?: boolean;
     nameKey?: string;
   }) {
@@ -276,8 +309,8 @@ function ChartLegendContent({
       )}
     >
       {payload
-        .filter(item => item.type !== "none")
-        .map(item => {
+        .filter((item: LegendPayloadEntry) => item.type !== "none")
+        .map((item: LegendPayloadEntry) => {
           const key = `${nameKey || item.dataKey || "value"}`;
           const itemConfig = getPayloadConfigFromPayload(config, item, key);
 
